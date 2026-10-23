@@ -8,15 +8,22 @@ from pathlib import Path
 DEFAULT_PATH = Path(__file__).resolve().parent.parent / "data" / "news.db"
 
 
+def database_path(path=None):
+    return Path(path or os.environ.get("NEWS_DB_PATH", DEFAULT_PATH))
+
+
 def utc_now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 @contextmanager
-def connect(path=None):
-    path = Path(path or os.environ.get("NEWS_DB_PATH", DEFAULT_PATH))
-    path.parent.mkdir(parents=True, exist_ok=True)
-    db = sqlite3.connect(path, timeout=30)
+def connect(path=None, read_only=False):
+    path = database_path(path)
+    if read_only:
+        db = sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True, timeout=30)
+    else:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        db = sqlite3.connect(path, timeout=30)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA foreign_keys = ON")
     try:
@@ -89,7 +96,9 @@ def record_failure(source_id, error, path=None):
 
 
 def get_headlines(source_id, path=None):
-    with connect(path) as db:
+    if not database_path(path).is_file():
+        return []
+    with connect(path, read_only=True) as db:
         return [dict(row) for row in db.execute("""
             SELECT a.*, h.rank FROM headlines h JOIN articles a ON a.id=h.article_id
             WHERE h.source_id=? ORDER BY h.rank LIMIT 10
@@ -97,11 +106,15 @@ def get_headlines(source_id, path=None):
 
 
 def get_statuses(path=None):
-    with connect(path) as db:
+    if not database_path(path).is_file():
+        return {}
+    with connect(path, read_only=True) as db:
         return {row["source_id"]: dict(row) for row in db.execute("SELECT * FROM source_status")}
 
 
 def get_body(source_id, url, path=None):
-    with connect(path) as db:
+    if not database_path(path).is_file():
+        return ""
+    with connect(path, read_only=True) as db:
         row = db.execute("SELECT body FROM articles WHERE source_id=? AND url=?", (source_id, url)).fetchone()
         return row[0] if row else ""

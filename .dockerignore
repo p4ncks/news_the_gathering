@@ -1,4 +1,6 @@
 .venv
+.venv-django
+staticfiles
 .git
 __pycache__
 data

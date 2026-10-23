@@ -2,7 +2,13 @@ services:
   web:
     build: .
     ports:
-      - "8501:8501"
+      - "127.0.0.1:8000:8000"
+    environment:
+      DJANGO_DEBUG: "false"
+      DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY:?Set DJANGO_SECRET_KEY in .env}"
+      DJANGO_ALLOWED_HOSTS: "${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,[::1]}"
+      DJANGO_SECURE_SSL_REDIRECT: "${DJANGO_SECURE_SSL_REDIRECT:-false}"
+      DJANGO_TRUST_PROXY: "${DJANGO_TRUST_PROXY:-false}"
     volumes:
       - news-data:/app/data
     restart: unless-stopped

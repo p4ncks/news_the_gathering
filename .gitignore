@@ -1,4 +1,6 @@
 .venv/
+.venv-django/
+staticfiles/
 __pycache__/
 *.py[cod]
 data/

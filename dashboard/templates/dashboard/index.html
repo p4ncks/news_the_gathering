@@ -1,0 +1,146 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Compare the current top ten headlines from news outlets around the world.">
+  <title>News, The Gathering — Your global news desk</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'dashboard/favicon.svg' %}">
+  <link rel="stylesheet" href="{% static 'dashboard/styles.css' %}?v=4">
+  <script src="{% static 'dashboard/filters.js' %}?v=3" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#headlines">Skip to headlines</a>
+  <header class="masthead">
+    <a class="brand" href="{% url 'dashboard:index' %}" aria-label="The Gathering home"><span class="brand-mark" aria-hidden="true">g.</span><span>The Gathering<span class="brand-caption">A wider view of the world</span></span></a>
+    <span class="masthead-caption">Independent perspectives. One open view.</span>
+    <a class="masthead-link" href="#source-directory">Meet the sources <span aria-hidden="true">↗</span></a>
+  </header>
+  <div class="app-layout">
+    <aside class="sidebar" aria-label="News filters">
+      <form method="get" action="{% url 'dashboard:index' %}" class="filter-form">
+        <input type="hidden" name="filtered" value="1">
+        <div class="filter-heading"><h2>Curate your view</h2><a href="{% url 'dashboard:index' %}">Reset</a></div>
+        <p class="filter-intro">Start with a place. Discover another perspective.</p>
+        <div class="search-field">
+          <label class="field-label" for="topic-search">Find a topic</label>
+          <div class="search-wrap"><span aria-hidden="true">⌕</span><input id="topic-search" class="search-input" type="search" name="q" value="{{ query }}" placeholder="Search the headlines"></div>
+          <p class="field-help">Search titles and summaries in their original languages.</p>
+        </div>
+        <fieldset>
+          <legend><span class="step-number" aria-hidden="true">01</span> Choose your continents</legend>
+          <p class="field-help">Select a continent to select its outlets.</p>
+          <div class="bulk-selection" role="group" aria-label="Select all continents and outlets">
+            <button type="button" class="selection-toggle" data-select-all="on" aria-pressed="{% if outlet_options and outlet_count == outlet_options|length %}true{% else %}false{% endif %}">All on</button>
+            <button type="button" class="selection-toggle" data-select-all="off" aria-pressed="{% if no_visible_outlets %}true{% else %}false{% endif %}">All off</button>
+          </div>
+          <div class="checkbox-list continents">
+            {% for option in continent_options %}
+              <label class="checkbox-option continent-option"><input type="checkbox" name="continent" value="{{ option.name }}"{% if option.selected %} checked{% endif %}{% if option.partial %} aria-checked="mixed"{% endif %}><span>{{ option.name }}</span><small class="group-count" data-group-count="{{ option.name }}" aria-hidden="true"></small></label>
+            {% endfor %}
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend><span class="step-number" aria-hidden="true">02</span> Fine-tune your outlets</legend>
+          <p class="field-help">Individual choices update their continent too.</p>
+          <div class="checkbox-list outlet-options">
+            {% for option in outlet_options %}
+              <label class="checkbox-option outlet-option"{% if not option.visible %} hidden{% endif %}><input type="checkbox" name="outlet" value="{{ option.id }}" data-continent="{{ option.continent }}"{% if option.selected %} checked{% endif %}><span>{{ option.name }}<small>{{ option.continent }}</small></span></label>
+            {% empty %}<p class="field-help">No outlets are enabled yet.</p>{% endfor %}
+          </div>
+          {% if outlet_options %}<p class="field-help outlet-options-empty" data-empty-outlets{% if not no_visible_outlets %} hidden{% endif %}>Select a continent to see its outlets.</p>{% endif %}
+        </fieldset>
+        <div class="filter-actions">
+          <p class="selection-count" data-selection-count aria-live="polite">{{ outlet_count }} outlet{{ outlet_count|pluralize }} selected</p>
+          <button class="button button-primary" type="submit">Apply my selection <span aria-hidden="true">→</span></button>
+          <button class="button button-secondary" type="submit">Reload saved headlines <span aria-hidden="true">↻</span></button>
+          <p class="sidebar-note" data-filter-note>Apply your selection to update the desk. Reloading shows the latest saved collection.</p>
+        </div>
+      </form>
+      <div class="sidebar-footer"><span aria-hidden="true">◎</span><p>A little context.<br>A much bigger picture.</p></div>
+    </aside>
+    <main id="headlines" class="main-content" tabindex="-1">
+      <header class="page-header">
+        <div class="eyebrow"><span class="edition-dot" aria-hidden="true"></span> Your global news desk <span class="eyebrow-rule" aria-hidden="true"></span></div>
+        <div class="hero-content">
+          <div><h1>The world is talking.<br><em>Take a wider view.</em></h1><p class="intro">Different places. Different priorities. Explore ten headlines from each outlet and see the world from more than one angle.</p></div>
+          <svg class="hero-globe" viewBox="0 0 160 160" fill="none" aria-hidden="true"><circle cx="80" cy="80" r="69"/><ellipse cx="80" cy="80" rx="33" ry="69"/><path d="M80 11v138M11 80h138M21 44h118M21 116h118"/><circle class="globe-point" cx="111" cy="44" r="5"/><circle class="globe-point" cx="47" cy="116" r="4"/></svg>
+        </div>
+        <div class="edition-notes"><span>Publisher feed &amp; page order</span><span>Original languages</span><span>All times UTC</span></div>
+      </header>
+      <section class="metrics" aria-label="Current selection">
+        <div class="metric"><span class="metric-value">{{ outlet_count|stringformat:"02d" }}</span><span class="metric-label">Outlets<br>in view</span></div>
+        <div class="metric"><span class="metric-value">{{ continent_count|stringformat:"02d" }}</span><span class="metric-label">Continents<br>represented</span></div>
+        <div class="metric"><span class="metric-value">{{ headline_count|stringformat:"02d" }}</span><span class="metric-label">Saved<br>headlines</span></div>
+        <div class="metric-caption">The same world.<br><em>Many front pages.</em></div>
+      </section>
+      <div class="section-heading"><div><span class="section-kicker">The perspective exchange</span><h2>Front pages, side by side.</h2></div><span class="section-caption">{% if query %}Matching “{{ query }}”{% else %}Explore each outlet’s latest saved edition{% endif %}</span></div>
+      {% if database_unavailable %}
+        <div class="empty-state" role="status"><span class="empty-state-label">Please try again</span><h3>Saved headlines are temporarily unavailable.</h3><p>The database could not be read. Check the server logs and database permissions, then try again.</p></div>
+      {% elif no_sources %}
+        <div class="empty-state" role="status"><span class="empty-state-label">Make it your view</span><h3>Choose at least one outlet.</h3><p>Choose a continent and an outlet, then apply your selection to bring its latest saved headlines into view.</p><a class="text-link" href="{% url 'dashboard:index' %}">Show all outlets <span aria-hidden="true">→</span></a></div>
+      {% elif no_headlines %}
+        <div class="notice notice-info" role="status"><strong>No headlines collected yet.</strong> No headlines have been collected for this selection yet. Run <code>python -m news.collect</code> in the project folder, then reload saved headlines.</div>
+      {% endif %}
+      <section class="outlet-grid" aria-label="Headlines by news outlet">
+        {% for card in cards %}
+          <article class="outlet-card" aria-labelledby="outlet-{{ card.source.id }}">
+            <header class="outlet-header">
+              <div class="outlet-geography"><span>{{ card.source.continent }}</span><span>{{ card.source.country }}</span></div>
+              <div class="outlet-title"><h3 id="outlet-{{ card.source.id }}">{{ card.source.name }}</h3><span class="outlet-arrow" aria-hidden="true">↗</span></div>
+              <div class="outlet-meta"><span>{{ card.source.language }}</span>{% if card.source.note %}<span>{{ card.source.note }}</span>{% endif %}</div>
+              <p class="collected-at"><span class="collection-dot{% if card.status.error or card.collection_stale or not card.status.succeeded_at %} collection-dot-muted{% endif %}" aria-hidden="true"></span> Collected: {{ card.collected_label }}</p>
+            </header>
+            <div class="outlet-content">
+              {% if card.status.error %}
+                <div class="notice notice-warning"><p>Latest collection failed. Showing the last saved headlines, if available.</p><details class="collection-details"><summary>Collection details</summary><p class="error-text">{{ card.status.error }}</p><p>Attempted: {{ card.attempted_label }}</p></details></div>
+              {% elif not card.status.succeeded_at %}<p class="card-note">Waiting for first collection.</p>
+              {% elif card.collection_stale %}<div class="notice notice-warning">Collection is over two hours old.</div>{% endif %}
+              {% if card.feed_stale %}<div class="notice notice-warning">Newest dated story is over 48 hours old. The publisher source may be stale.</div>{% endif %}
+              {% if card.has_headlines and not card.articles %}<p class="card-empty">No matching headlines in this outlet’s top ten.</p>{% elif not card.has_headlines %}<p class="card-empty">No saved headlines for this outlet yet.</p>{% endif %}
+
+              <ol class="headline-list">
+                {% for article in card.articles %}
+                  {% if forloop.counter == 4 %}
+                    </ol>
+                    <details class="more-headlines"{% if query %} open{% endif %}>
+                      <summary><span>{{ card.articles|length|add:"-3" }} more headline{{ card.articles|length|add:"-3"|pluralize }}</span><span class="expand-symbol" aria-hidden="true">+</span></summary>
+                      <ol class="headline-list">
+                  {% endif %}
+                  <li class="headline {% if forloop.first %}headline-lead{% else %}headline-compact{% endif %}" value="{{ article.rank }}">
+                    <span class="headline-rank" aria-label="Rank {{ article.rank }}">{{ article.rank|stringformat:"02d" }}{% if forloop.first %}<span>{% if query %}First matching headline{% else %}Leading headline{% endif %}</span>{% endif %}</span>
+                    <div class="story-copy">
+                      <h4>{% if article.url %}<a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">{{ article.title }}</a>{% else %}{{ article.title }}{% endif %}</h4>
+                      {% if not forloop.first %}<details class="story-details"><summary>Story details <span aria-hidden="true">+</span></summary>{% endif %}
+                        <p class="published-at">Published: {{ article.published_label }}</p>
+                        {% if article.summary_short %}<p class="headline-summary">{{ article.summary_short }}</p>{% endif %}
+                        {% if article.url %}<a class="article-link" href="{{ article.url }}" target="_blank" rel="noopener noreferrer">Read at {{ card.source.name }} <span aria-hidden="true">↗</span><span class="visually-hidden"> (opens in a new tab)</span></a>{% endif %}
+                        {% if article.body %}<details class="article-body"><summary>Extracted article text</summary><div>{{ article.body|linebreaksbr }}</div></details>{% endif %}
+                      {% if not forloop.first %}</details>{% endif %}
+                    </div>
+                  </li>
+                {% endfor %}
+              </ol>
+              {% if card.articles|length > 3 %}</details>{% endif %}
+            </div>
+            <footer class="outlet-footer"><span>{% if query %}{{ card.articles|length }} match{{ card.articles|length|pluralize:"es" }}{% else %}{{ card.articles|length }} saved headline{{ card.articles|length|pluralize }}{% endif %}</span><span>Original perspective <span aria-hidden="true">◎</span></span></footer>
+          </article>
+        {% endfor %}
+      </section>
+      <details id="source-directory" class="source-directory">
+        <summary><span><span class="section-kicker">Behind the headlines</span>Source directory &amp; how collection works</span><span class="expand-symbol" aria-hidden="true">+</span></summary>
+        <div class="directory-content">
+          <p>Official publisher feeds and section pages supply headlines, descriptions and links. The first ten stories follow publisher feed or page order; they are not a popularity score or an exact homepage ranking. Optional Trafilatura extraction saves article text where accessible. Failed collections retain the previous successful edition.</p>
+          <div class="table-scroll" tabindex="0" role="region" aria-label="Source directory table">
+            <table><caption class="visually-hidden">Configured news outlets and their collection sources</caption><thead><tr><th scope="col">Outlet</th><th scope="col">Continent</th><th scope="col">Language</th><th scope="col">Collection</th><th scope="col">Publisher source</th><th scope="col">Note</th></tr></thead>
+              <tbody>{% for source in sources %}<tr><th scope="row"><a href="{{ source.website }}" target="_blank" rel="noopener noreferrer">{{ source.name }}</a></th><td>{{ source.continent }}</td><td>{{ source.language }}</td><td><span class="source-status{% if not source.enabled %} source-status-disabled{% endif %}">{% if source.enabled %}Enabled{% else %}Disabled{% endif %}</span></td><td><a href="{{ source.feed_url|default:source.website }}" target="_blank" rel="noopener noreferrer">{% if source.discovery == 'html' %}Source page{% else %}Publisher feed{% endif %} <span aria-hidden="true">↗</span></a></td><td>{{ source.note|default:"—" }}</td></tr>{% endfor %}</tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+      <footer class="page-footer"><span>The Gathering<span class="footer-dot" aria-hidden="true">.</span></span><p>Stay curious. Keep your perspective open.</p><a href="#headlines">Back to the desk ↑</a></footer>
+    </main>
+  </div>
+</body>
+</html>
