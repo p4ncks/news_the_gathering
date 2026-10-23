@@ -12,6 +12,8 @@ from django.views.decorators.http import require_safe
 from news import database
 from news.sources import CONTINENTS, SOURCES
 
+from .countries import COUNTRY_FLAGS
+
 LOG = logging.getLogger(__name__)
 
 
@@ -91,6 +93,7 @@ def index(request):
             })
         cards.append({
             "source": source,
+            "flag": COUNTRY_FLAGS.get(source.country, ""),
             "status": status,
             "collected_label": timestamp_label(status.get("succeeded_at")),
             "attempted_label": timestamp_label(status.get("attempted_at")),

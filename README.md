@@ -114,9 +114,11 @@ and automatic same-story matching are not implemented.
 | `gathering/urls.py` | Project URL routing |
 | `dashboard/urls.py` | Dashboard and health check routes |
 | `dashboard/views.py` | Filter selections, read records and prepare template context |
+| `dashboard/countries.py` | Country flags displayed beside outlet languages |
 | `dashboard/templates/dashboard/index.html` | Page layout and accessible HTML controls |
 | `dashboard/static/dashboard/styles.css` | Colors, typography and responsive layout |
 | `dashboard/static/dashboard/favicon.svg` | The masthead logo as the browser tab icon |
+| `dashboard/static/dashboard/world-map.svg` | Decorative world map using public-domain Natural Earth coastlines |
 | `dashboard/static/dashboard/filters.js` | Synchronize continent and outlet selections |
 | `news/sources.py` | Outlet names, countries, continents, languages and feed URLs |
 | `news/collector.py` | Download feeds, clean text, deduplicate and extract articles |
@@ -134,6 +136,9 @@ the listing page. The HTML selectors are specific to CNN; another publisher's
 HTML layout needs its own parser. Source URLs are trusted project
 configuration. Set `enabled=False` to hide an unavailable outlet. No schema
 change is needed. Edit CSS variables in `styles.css` to change the theme.
+When adding an outlet from a new country, add its flag in `dashboard/countries.py`.
+Outlet names and arrows link to their publisher website. Country names appear
+when hovering or focusing the flags beside each outlet's language.
 
 The dashboard uses the existing database functions rather than Django models,
 so collectors continue to work independently of Django. No Django migrations

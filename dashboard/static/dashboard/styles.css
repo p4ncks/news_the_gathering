@@ -96,8 +96,7 @@ legend { display: flex; gap: 8px; align-items: center; width: 100%; padding: 0; 
 h1 { margin: 0; color: var(--ink); font: 400 clamp(38px, 3.9vw, 62px)/1.08 Georgia, "Times New Roman", serif; letter-spacing: -2.3px; }
 h1 em { color: var(--accent); font-weight: 400; }
 .intro { max-width: 570px; margin: 16px 0 0; color: var(--muted); font-size: 15px; line-height: 1.8; }
-.hero-globe { flex: 0 0 135px; width: 135px; height: 135px; margin-right: 5px; stroke: #c6b9a8; stroke-width: .8; transform: rotate(-18deg); }
-.hero-globe .globe-point { fill: var(--accent); stroke: var(--paper); stroke-width: 2; }
+.hero-map { flex: 0 0 200px; width: 200px; height: auto; margin-right: 5px; }
 .edition-notes { display: flex; flex-wrap: wrap; gap: 5px 17px; margin-top: 22px; color: var(--muted); font-size: 12px; }
 .edition-notes span + span::before { content: "/"; margin-right: 15px; color: #b0aaa0; }
 .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(125px, 1fr); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--line); }
@@ -118,11 +117,17 @@ h1 em { color: var(--accent); font-weight: 400; }
 .outlet-header { padding: 18px 21px 15px; border-bottom: 1px solid var(--line); }
 .outlet-geography { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 3px 12px; color: var(--muted); font-size: 11px; letter-spacing: .7px; text-transform: uppercase; }
 .outlet-geography > span:first-child { color: var(--accent); font-weight: 700; }
-.outlet-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.outlet-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-decoration: none; }
+.outlet-title:hover h3, .outlet-title:hover .outlet-arrow { color: var(--accent); }
 .outlet-header h3 { margin: 9px 0 5px; color: var(--ink); font: 700 28px/1.15 Georgia, "Times New Roman", serif; letter-spacing: -.8px; overflow-wrap: anywhere; }
 .outlet-arrow { color: #a3a39a; font-size: 23px; }
 .outlet-meta { display: flex; flex-wrap: wrap; gap: 3px 9px; color: var(--muted); font-size: 12px; }
-.outlet-meta span + span { padding-left: 9px; border-left: 1px solid var(--line); }
+.outlet-meta > span + span { padding-left: 9px; border-left: 1px solid var(--line); }
+.outlet-language { display: inline-flex; align-items: center; gap: 7px; }
+.country-flag { position: relative; display: inline-flex; align-items: center; cursor: help; border-radius: 2px; }
+.country-flag > span:first-child { font: 20px/1.2 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+.country-tooltip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 3; width: max-content; max-width: 200px; padding: 5px 9px; border-radius: 3px; background: var(--ink); color: var(--white); font-size: 12px; line-height: 1.4; text-align: center; pointer-events: none; visibility: hidden; opacity: 0; }
+.country-flag:hover .country-tooltip, .country-flag:focus .country-tooltip { visibility: visible; opacity: 1; }
 .collected-at { display: flex; align-items: center; gap: 5px; margin: 13px 0 0; color: var(--muted); font-size: 11px; }
 .collection-dot { flex: 0 0 4px; width: 4px; height: 4px; border-radius: 50%; background: #537463; }
 .collection-dot-muted { background: #a08554; }
@@ -199,11 +204,11 @@ td:last-child { min-width: 180px; }
   .headline-lead h4 { font-size: 29px; }
   .headline-compact h4 { font-size: 19px; }
   .headline-summary { font-size: 15px; }
-  .hero-globe { flex-basis: 165px; width: 165px; height: 165px; margin-right: 25px; }
+  .hero-map { flex-basis: 240px; width: 240px; margin-right: 25px; }
 }
 @media (max-width: 1300px) {
   .outlet-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .hero-globe { flex-basis: 110px; width: 110px; height: 110px; }
+  .hero-map { flex-basis: 165px; width: 165px; }
   .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .metric-caption { display: none; }
 }
@@ -213,7 +218,7 @@ td:last-child { min-width: 180px; }
   .main-content { padding: 30px 27px 22px; }
   .masthead { padding-right: 27px; padding-left: 23px; }
   .masthead-caption { display: none; }
-  .hero-globe { display: none; }
+  .hero-map { display: none; }
   h1 { font-size: 44px; }
   .outlet-grid { gap: 18px; }
   .outlet-header { padding: 17px 19px 14px; }
@@ -247,7 +252,7 @@ td:last-child { min-width: 180px; }
   .button-secondary { margin: 0; }
   .sidebar-footer { display: none; }
   .main-content { padding: 29px 24px 22px; }
-  .hero-globe { display: block; flex-basis: 105px; width: 105px; height: 105px; }
+  .hero-map { display: block; flex-basis: 150px; width: 150px; }
   h1 { font-size: clamp(36px, 5.6vw, 45px); }
   .intro { font-size: 15px; }
   .outlet-grid { gap: 16px; }
@@ -273,7 +278,7 @@ td:last-child { min-width: 180px; }
   .button-secondary { font-size: 12px; }
   .main-content { padding-right: 19px; padding-left: 19px; }
   .eyebrow { font-size: 11px; letter-spacing: 1.3px; }
-  .hero-globe { display: none; }
+  .hero-map { display: none; }
   h1 { font-size: 39px; letter-spacing: -1.8px; }
   .intro { font-size: 15px; }
   .edition-notes { gap: 5px 10px; font-size: 11px; }

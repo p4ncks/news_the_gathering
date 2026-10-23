@@ -7,7 +7,7 @@
   <meta name="description" content="Compare the current top ten headlines from news outlets around the world.">
   <title>News, The Gathering — Your global news desk</title>
   <link rel="icon" type="image/svg+xml" href="{% static 'dashboard/favicon.svg' %}">
-  <link rel="stylesheet" href="{% static 'dashboard/styles.css' %}?v=4">
+  <link rel="stylesheet" href="{% static 'dashboard/styles.css' %}?v=5">
   <script src="{% static 'dashboard/filters.js' %}?v=3" defer></script>
 </head>
 <body>
@@ -65,7 +65,7 @@
         <div class="eyebrow"><span class="edition-dot" aria-hidden="true"></span> Your global news desk <span class="eyebrow-rule" aria-hidden="true"></span></div>
         <div class="hero-content">
           <div><h1>The world is talking.<br><em>Take a wider view.</em></h1><p class="intro">Different places. Different priorities. Explore ten headlines from each outlet and see the world from more than one angle.</p></div>
-          <svg class="hero-globe" viewBox="0 0 160 160" fill="none" aria-hidden="true"><circle cx="80" cy="80" r="69"/><ellipse cx="80" cy="80" rx="33" ry="69"/><path d="M80 11v138M11 80h138M21 44h118M21 116h118"/><circle class="globe-point" cx="111" cy="44" r="5"/><circle class="globe-point" cx="47" cy="116" r="4"/></svg>
+          <img class="hero-map" src="{% static 'dashboard/world-map.svg' %}" alt="" aria-hidden="true" width="300" height="160">
         </div>
         <div class="edition-notes"><span>Publisher feed &amp; page order</span><span>Original languages</span><span>All times UTC</span></div>
       </header>
@@ -88,8 +88,23 @@
           <article class="outlet-card" aria-labelledby="outlet-{{ card.source.id }}">
             <header class="outlet-header">
               <div class="outlet-geography"><span>{{ card.source.continent }}</span><span>{{ card.source.country }}</span></div>
-              <div class="outlet-title"><h3 id="outlet-{{ card.source.id }}">{{ card.source.name }}</h3><span class="outlet-arrow" aria-hidden="true">↗</span></div>
-              <div class="outlet-meta"><span>{{ card.source.language }}</span>{% if card.source.note %}<span>{{ card.source.note }}</span>{% endif %}</div>
+              <a class="outlet-title" href="{{ card.source.website }}" target="_blank" rel="noopener noreferrer">
+                <h3 id="outlet-{{ card.source.id }}">{{ card.source.name }}</h3>
+                <span class="outlet-arrow" aria-hidden="true">↗</span>
+                <span class="visually-hidden"> (opens in a new tab)</span>
+              </a>
+              <div class="outlet-meta">
+                <span class="outlet-language">
+                  {{ card.source.language }}
+                  {% if card.flag %}
+                    <span class="country-flag" role="img" aria-label="{{ card.source.country }}" tabindex="0">
+                      <span aria-hidden="true">{{ card.flag }}</span>
+                      <span class="country-tooltip" aria-hidden="true">{{ card.source.country }}</span>
+                    </span>
+                  {% endif %}
+                </span>
+                {% if card.source.note %}<span>{{ card.source.note }}</span>{% endif %}
+              </div>
               <p class="collected-at"><span class="collection-dot{% if card.status.error or card.collection_stale or not card.status.succeeded_at %} collection-dot-muted{% endif %}" aria-hidden="true"></span> Collected: {{ card.collected_label }}</p>
             </header>
             <div class="outlet-content">
