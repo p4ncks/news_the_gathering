@@ -1,4 +1,5 @@
 """Exercise the Django dashboard with an isolated database and no network."""
+import hashlib
 import os
 import tempfile
 import unittest
@@ -7,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
+os.environ.setdefault("DJANGO_DEBUG", "true")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "gathering.settings")
 
 import django
@@ -107,9 +109,14 @@ class AppTests(unittest.TestCase):
         response = self.get(filtered="1", continent=["Europe"], outlet=["bbc"], q="no-such-topic")
         self.assertEqual(response.context["outlet_count"], 1)
         self.assertEqual(response.context["headline_count"], 2)
-        self.assertEqual(response.context["cards"][0]["articles"], [])
-        self.assertTrue(response.context["cards"][0]["has_headlines"])
-        self.assertIn("No matching headlines", response.content.decode())
+        self.assertEqual(response.context["cards"], [])
+        self.assertTrue(response.context["no_matches"])
+        self.assertIn("No headlines match", response.content.decode())
+        self.assertIn("0 matches", response.content.decode())
+        self.assertIn("0 outlets", response.content.decode())
+        shown = self.get(filtered="1", continent=["Europe"], outlet=["bbc"], q="no-such-topic", show_empty="1")
+        self.assertEqual(len(shown.context["cards"]), 1)
+        self.assertTrue(shown.context["cards"][0]["has_headlines"])
 
     def test_explicit_empty_or_unknown_filters_never_restore_default_selection(self):
         for parameters in ({"filtered": "1"},
@@ -129,7 +136,7 @@ class AppTests(unittest.TestCase):
         self.assertTrue(response.context["no_headlines"])
         self.assertEqual(response.context["headline_count"], 0)
         self.assertIn("No headlines collected yet", response.content.decode())
-        self.assertIn("Waiting for first collection", response.content.decode())
+        self.assertIn("Waiting for first update", response.content.decode())
 
     def test_collection_failure_stale_feed_and_article_details_are_visible(self):
         old = (datetime.now(timezone.utc) - timedelta(days=3)).isoformat(timespec="seconds")
@@ -144,10 +151,12 @@ class AppTests(unittest.TestCase):
         database.record_failure("bbc", "Publisher timed out")
         response = self.get(filtered="1", continent=["Europe"], outlet=["bbc"])
         html = response.content.decode()
-        self.assertIn("Latest collection failed", html)
-        self.assertIn("Publisher timed out", html)
+        self.assertIn("Saved edition · update delayed", html)
+        self.assertIn("Latest update failed", html)
+        self.assertNotIn("Publisher timed out", html)
         self.assertIn("Older saved story", html)
-        self.assertIn("Previously extracted article text.", html)
+        self.assertNotIn("Previously extracted article text.", html)
+        self.assertIn("Read saved article text", html)
         self.assertIn("Published:", html)
         self.assertNotEqual(response.context["cards"][0]["articles"][0]["published_label"],
                             "Not available")
@@ -159,6 +168,15 @@ class AppTests(unittest.TestCase):
         self.assertIn("CNN Space", response.content.decode())
         options = {option["id"] for option in response.context["outlet_options"]}
         self.assertTrue({"cnn", "cnn-space"}.issubset(options))
+
+    def test_dashboard_uses_the_configured_freshness_window(self):
+        old = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat()
+        with database.connect() as db:
+            db.execute("UPDATE source_status SET succeeded_at=? WHERE source_id=?", (old, "bbc"))
+        with override_settings(NEWS_FRESHNESS_HOURS=24):
+            response = self.get(filtered="1", continent=["Europe"], outlet=["bbc"])
+        self.assertFalse(response.context["cards"][0]["collection_stale"])
+        self.assertEqual(response.context["freshness_hours"], 24)
 
     def test_source_directory_rows_are_alphabetical_and_omit_internal_notes(self):
         response = self.get()
@@ -172,7 +190,7 @@ class AppTests(unittest.TestCase):
         self.assertNotIn("news/sources.py", text)
 
     def test_deselecting_last_outlet_clears_its_continent(self):
-        response = self.get(filtered="1", continent=["Europe", "South America"], outlet=["g1"])
+        response = self.get(filtered="1", continent=["Europe", "South America"], outlet=["g1"], enhanced="1")
         self.assertEqual([card["source"].id for card in response.context["cards"]], ["g1"])
         active = {option["name"] for option in response.context["continent_options"] if option["selected"]}
         self.assertEqual(active, {"South America"})
@@ -226,10 +244,15 @@ class AppTests(unittest.TestCase):
             body="Last story article text" if rank == 10 else "",
         ) for rank in range(1, 11)])
         response = self.get(filtered="1", continent=["Europe"], outlet=["bbc"])
-        html = response.content.decode()
+        markup = response.content.decode()
         self.assertEqual(response.context["headline_count"], 10)
-        self.assertIn("Saved story number 10", html)
-        self.assertIn("Last story article text", html)
+        self.assertIn("Saved story number 10", markup)
+        self.assertNotIn("Last story article text", markup)
+        document = html.fromstring(response.content)
+        saved_link = document.xpath('//a[contains(text(), "Read saved article text")]/@href')[0]
+        reader = self.client.get(saved_link)
+        self.assertEqual(reader.status_code, 200)
+        self.assertIn("Last story article text", reader.content.decode())
 
     def test_publisher_text_is_escaped_and_unsafe_article_links_are_not_rendered(self):
         database.save_collection("bbc", [
@@ -273,10 +296,176 @@ class AppTests(unittest.TestCase):
         invalid.write_text("Not a SQLite database", encoding="utf-8")
         with patch.dict(os.environ, {"NEWS_DB_PATH": str(invalid)}):
             with self.assertLogs("dashboard.views", level="ERROR"):
-                response = self.get()
+                response = self.client.get(self.index)
+        self.assertEqual(response.status_code, 503)
         self.assertTrue(response.context["database_unavailable"])
         self.assertEqual(response.context["headline_count"], 0)
         self.assertEqual(invalid.read_text(encoding="utf-8"), "Not a SQLite database")
+
+    def test_no_javascript_can_recover_from_an_empty_selection(self):
+        response = self.get(filtered="1", continent=["Europe"])
+        self.assertEqual(response.context["outlet_count"], 0)
+        self.assertFalse(response.context["no_visible_outlets"])
+        document = html.fromstring(response.content)
+        visible = document.xpath('//label[contains(@class,"outlet-option")][not(@hidden)]//input/@value')
+        self.assertIn("bbc", visible)
+        self.assertNotIn("g1", visible)
+        europe = document.xpath('//input[@name="continent"][@value="Europe"]')[0]
+        self.assertIn("checked", europe.attrib)
+        recovered = self.get(filtered="1", continent=["Europe"], outlet=["bbc"])
+        self.assertEqual(recovered.context["outlet_count"], 1)
+        self.assertIn("Climate summit opens", recovered.content.decode())
+        self.assertTrue(all("hidden" in node.attrib for node in document.xpath('//*[@data-enhanced-only]')))
+
+    def test_search_hides_empty_outlets_and_preserves_options_in_links(self):
+        response = self.get(q="climate", view="compact")
+        self.assertEqual(response.context["match_count"], 1)
+        self.assertEqual(response.context["matching_outlet_count"], 1)
+        self.assertEqual([card["source"].id for card in response.context["cards"]], ["bbc"])
+        self.assertIn("q=climate", response.context["empty_toggle_url"])
+        self.assertIn("view=compact", response.context["empty_toggle_url"])
+        self.assertNotIn("q=", response.context["clear_search_url"])
+
+    def test_headline_languages_and_edition_scope_are_explicit(self):
+        response = self.get()
+        document = html.fromstring(response.content)
+        bbc = document.get_element_by_id("edition-bbc")
+        g1 = document.get_element_by_id("edition-g1")
+        self.assertEqual(bbc.xpath('.//h4/@lang'), ["en", "en"])
+        self.assertEqual(g1.xpath('.//h4/@lang'), ["pt-BR"])
+        self.assertEqual(g1.xpath('.//p[contains(@class,"headline-summary")]/@lang'), ["pt-BR"])
+        self.assertIn("Edition: General news", bbc.text_content())
+        self.assertIn("Edition: Latest news", g1.text_content())
+        for source in SOURCES:
+            self.assertTrue(source.language_code)
+            self.assertTrue(source.edition_scope)
+
+    def test_dashboard_loads_one_snapshot_and_does_not_embed_full_text(self):
+        body = "Large saved article text. " * 3000
+        for source in SOURCES:
+            if source.enabled:
+                database.save_collection(source.id, [self.article(
+                    f"large-{rank}", f"Headline {rank}", "Summary", body=body,
+                ) for rank in range(10)])
+        with patch("news.database.get_dashboard", wraps=database.get_dashboard) as snapshot, \
+                patch("news.database.get_headlines", side_effect=AssertionError("Per-source read")), \
+                patch("news.database.get_article", side_effect=AssertionError("Unexpected body read")):
+            response = self.get()
+        self.assertEqual(snapshot.call_count, 1)
+        self.assertNotIn(body, response.content.decode())
+        self.assertLess(len(response.content), 600_000)
+        self.assertTrue(all("body" not in article for card in response.context["cards"] for article in card["articles"]))
+
+    def test_saved_article_is_lazy_scoped_and_escaped(self):
+        database.save_collection("bbc", [self.article(
+            "saved", "Saved title", "Summary", body='<script>alert("body")</script>\nSaved paragraph',
+        )])
+        saved = database.get_headlines("bbc")[0]
+        url = reverse("dashboard:article", args=["bbc", saved["id"]])
+        reader = self.client.get(url)
+        self.assertEqual(reader.status_code, 200)
+        self.assertIn("Saved paragraph", reader.content.decode())
+        self.assertIn("&lt;script&gt;", reader.content.decode())
+        self.assertNotIn('<script>alert("body")</script>', reader.content.decode())
+        self.assertEqual(self.client.get(reverse("dashboard:article", args=["g1", saved["id"]])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("dashboard:article", args=["unknown", saved["id"]])).status_code, 404)
+        self.assertEqual(self.client.post(url).status_code, 405)
+
+    def test_saved_text_age_and_version_are_distinct_from_collection_time(self):
+        title, summary = "Saved title", "Saved description"
+        fetched = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(timespec="seconds")
+        fingerprint = hashlib.sha256((title + "\0" + summary).encode("utf-8")).hexdigest()
+        database.save_collection("bbc", [self.article(
+            "versioned", title, summary, body="Saved body", body_fetched_at=fetched,
+            body_metadata_hash=fingerprint,
+        )])
+        saved = database.get_headlines("bbc")[0]
+        url = reverse("dashboard:article", args=["bbc", saved["id"]])
+        original = self.client.get(url)
+        self.assertIn("Text saved:", original.content.decode())
+        self.assertNotEqual(original.context["body_saved_label"], "Not available")
+        self.assertFalse(original.context["body_metadata_changed"])
+        database.save_collection("bbc", [self.article("versioned", "Updated title", summary)])
+        changed = self.client.get(url)
+        self.assertEqual(changed.context["body_saved_label"], original.context["body_saved_label"])
+        self.assertTrue(changed.context["body_metadata_changed"])
+        self.assertIn("may predate the current headline", changed.content.decode())
+
+    def test_legacy_saved_text_does_not_claim_a_verified_extraction_time(self):
+        database.save_collection("bbc", [self.article("legacy", "Legacy title", "Description", body="Legacy text")])
+        saved = database.get_headlines("bbc")[0]
+        reader = self.client.get(reverse("dashboard:article", args=["bbc", saved["id"]]))
+        self.assertTrue(reader.context["body_version_unknown"])
+        self.assertFalse(reader.context["body_metadata_changed"])
+        self.assertEqual(reader.context["body_saved_label"], "Not available")
+        self.assertIn("have not been verified", reader.content.decode())
+
+    def test_compact_mode_shows_all_ranks_without_embedding_summaries(self):
+        database.save_collection("bbc", [self.article(str(rank), f"Title {rank}", "Description") for rank in range(10)])
+        response = self.get(filtered="1", continent=["Europe"], outlet=["bbc"], view="compact")
+        document = html.fromstring(response.content)
+        card = document.get_element_by_id("edition-bbc")
+        self.assertEqual(len(card.xpath('.//li[contains(@class,"headline-compact")]')), 10)
+        self.assertFalse(card.xpath('.//details[contains(@class,"more-headlines")]'))
+        self.assertEqual(len(card.xpath('.//details[@class="story-details"]')), 10)
+        self.assertTrue(response.context["compact"])
+
+    def test_only_the_persistent_apply_action_is_shown(self):
+        response = self.get(filtered="1", continent=["Europe"], outlet=["bbc"])
+        document = html.fromstring(response.content)
+        form = document.xpath('//form[contains(@class,"filter-form")]')[0]
+        self.assertEqual(len(form.xpath('.//button[@type="submit"]')), 1)
+        self.assertTrue(form.xpath('.//div[contains(@class,"filter-top-action")]/button'))
+        self.assertFalse(form.xpath('.//*[contains(text(),"Reload this view")]'))
+        self.assertNotIn("Search titles and summaries in their original languages.", form.text_content())
+        self.assertIn("Discover what is the world talking about", form.text_content())
+        self.assertFalse(document.xpath('//*[contains(@class,"masthead-caption")]'))
+
+    def test_latest_update_metric_and_discreet_status_stay_in_the_header(self):
+        database.record_failure("bbc", "Private failure details")
+        response = self.get(filtered="1", continent=["Europe"], outlet=["bbc"])
+        document = html.fromstring(response.content)
+        card = document.get_element_by_id("edition-bbc")
+        self.assertIn("Latest update", document.xpath('//section[@class="metrics"]')[0].text_content())
+        self.assertEqual(response.context["latest_collection_label"], response.context["cards"][0]["collected_label"])
+        self.assertTrue(card.xpath('.//header//*[contains(@class,"collection-meta")]'))
+        self.assertTrue(card.xpath('.//header//*[contains(@class,"collection-state")]'))
+        self.assertFalse(card.xpath('.//div[@class="outlet-content"]//*[contains(@class,"notice-warning")]'))
+        self.assertNotIn("Private failure details", response.content.decode())
+
+    def test_readiness_distinguishes_process_from_usable_news(self):
+        ready_url = reverse("dashboard:ready")
+        response = self.client.get(ready_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "degraded")
+        self.assertEqual(response.json()["fresh"], 2)
+        self.assertEqual(response.json()["missing"], len([source for source in SOURCES if source.enabled]) - 2)
+        with override_settings(NEWS_MIN_FRESH_SOURCES=3):
+            self.assertEqual(self.client.get(ready_url).status_code, 503)
+        healthy_sources = [source for source in SOURCES if source.id in {"bbc", "g1"}]
+        with patch("dashboard.views.SOURCES", healthy_sources):
+            healthy = self.client.get(ready_url)
+        self.assertEqual(healthy.status_code, 200)
+        self.assertEqual(healthy.json()["status"], "ok")
+        old = (datetime.now(timezone.utc) - timedelta(days=3)).isoformat(timespec="seconds")
+        with database.connect() as db:
+            db.execute("UPDATE source_status SET succeeded_at=?", (old,))
+        stale = self.client.get(ready_url)
+        self.assertEqual(stale.status_code, 503)
+        self.assertEqual(stale.json()["fresh"], 0)
+        self.assertEqual(stale.json()["stale"], 2)
+        self.assertEqual(self.client.get(reverse("dashboard:health")).status_code, 200)
+        self.assertEqual(self.client.post(ready_url).status_code, 405)
+
+    def test_health_and_public_errors_do_not_leak_collection_details(self):
+        secret = "https://admin:private-token@home.internal/private/database/path"
+        database.record_failure("bbc", secret)
+        response = self.get()
+        self.assertNotIn(secret, response.content.decode())
+        readiness = self.client.get(reverse("dashboard:ready"))
+        self.assertEqual(readiness.json()["failed"], 1)
+        self.assertNotIn("private-token", readiness.content.decode())
+        self.assertNotIn("python -m news.collect", response.content.decode())
 
 
 if __name__ == "__main__":

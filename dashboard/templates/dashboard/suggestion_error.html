@@ -1,0 +1,9 @@
+{% load static i18n %}{% get_current_language as LANGUAGE_CODE %}
+<!doctype html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% translate "Suggest a news outlet" %} — The Gathering</title><link rel="icon" type="image/svg+xml" href="{% static 'dashboard/favicon.svg' %}"><link rel="stylesheet" href="{% static 'dashboard/styles.css' %}?v=11"></head>
+<body>
+  <header class="masthead"><a class="brand" href="{% url 'dashboard:index' %}"><span class="brand-mark" aria-hidden="true">g.</span><span>The Gathering<span class="brand-caption">{% translate "A wider view of the world" %}</span></span></a><div class="masthead-actions">{% include 'dashboard/language_selector.html' %}<a class="masthead-link" href="{{ back_to_desk }}">{% translate "Back to the desk" %} <span aria-hidden="true">↗</span></a></div></header>
+  <main class="reader-content"><h1>{% translate "Suggest a news outlet" %}</h1>{% include 'dashboard/suggestions.html' %}</main>
+</body>
+</html>

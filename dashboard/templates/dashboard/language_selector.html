@@ -1,0 +1,12 @@
+{% load i18n %}
+{% get_current_language as current_language %}
+{% get_available_languages as available_languages %}
+<form class="language-form" action="{% url 'set_language' %}" method="post">
+  {% csrf_token %}
+  <input name="next" type="hidden" value="{{ language_next|default:request.get_full_path }}">
+  <label for="site-language">{% translate "Language" %}</label>
+  <select id="site-language" name="language" data-language-select>
+    {% for code, name in available_languages %}<option value="{{ code }}" lang="{{ code }}"{% if code == current_language %} selected{% endif %}>{{ name }}</option>{% endfor %}
+  </select>
+  <button type="submit" class="language-apply" data-language-apply aria-label="{% translate 'Change language' %}"><span aria-hidden="true">→</span></button>
+</form>

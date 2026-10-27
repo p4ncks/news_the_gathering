@@ -9,15 +9,33 @@ services:
       DJANGO_ALLOWED_HOSTS: "${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,[::1]}"
       DJANGO_SECURE_SSL_REDIRECT: "${DJANGO_SECURE_SSL_REDIRECT:-false}"
       DJANGO_TRUST_PROXY: "${DJANGO_TRUST_PROXY:-false}"
+      NEWS_FRESHNESS_HOURS: "${NEWS_FRESHNESS_HOURS:-2}"
+      NEWS_MIN_FRESH_SOURCES: "${NEWS_MIN_FRESH_SOURCES:-1}"
     volumes:
       - news-data:/app/data
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
   collector:
     build: .
     command: ["python", "-m", "news.collect", "--interval", "30"]
+    environment:
+      DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY:?Set DJANGO_SECRET_KEY in .env}"
+      NEWS_RETENTION_DAYS: "${NEWS_RETENTION_DAYS:-30}"
+      NEWS_MAX_EDITIONS: "${NEWS_MAX_EDITIONS:-48}"
+      NEWS_SOURCE_TIMEOUT_SECONDS: "${NEWS_SOURCE_TIMEOUT_SECONDS:-60}"
+      NEWS_MIN_EDITION_RATIO: "${NEWS_MIN_EDITION_RATIO:-0.5}"
     volumes:
       - news-data:/app/data
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       disable: true
 volumes:

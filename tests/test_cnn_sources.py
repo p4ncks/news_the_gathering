@@ -1,12 +1,15 @@
 """CNN discovery stays on the publisher's pages and fails without replacing cached news."""
 import tempfile
 import unittest
+import os
 from pathlib import Path
 from unittest.mock import patch
 
 from news import database
 from news.collector import ArticleExtractor, collect_source, parse_html_headlines
 from news.sources import SOURCES
+
+os.environ.setdefault("DJANGO_DEBUG", "true")
 
 
 def card(path, title, summary="", kind="article"):
@@ -37,6 +40,13 @@ class CNNSourceTests(unittest.TestCase):
             self.assertEqual(source.feed_url, "")
         self.assertEqual(self.cnn.website, "https://www.cnn.com")
         self.assertEqual(self.space.website, "https://www.cnn.com/science/space")
+
+    def test_representative_nested_listing_fixture(self):
+        content = (Path(__file__).parent / "fixtures" / "publisher-listing.html").read_bytes()
+        articles = parse_html_headlines(content, self.cnn.website)
+        self.assertEqual([article["title"] for article in articles],
+                         ["A fictional mission reaches its destination", "Fictional live coverage"])
+        self.assertEqual(articles[0]["summary"], "Scientists discuss the next steps.")
 
     def test_page_order_ignores_navigation_images_videos_and_duplicates(self):
         story = "/2026/10/23/science/first-story"
@@ -107,6 +117,25 @@ class CNNSourceTests(unittest.TestCase):
             self.assertEqual(extractor.fetch(self.space.website), b"Space")
         self.assertEqual(fetch.call_count, 3)
         self.assertEqual(sleep.call_count, 2)
+
+    def test_redirected_html_checks_destination_robots_before_page_request(self):
+        requests = []
+
+        def download(url, max_bytes=None, redirect_guard=None):
+            requests.append(url)
+            if url == "https://publisher.example/robots.txt":
+                return b"User-agent: *\nAllow: /\n"
+            if url == "https://other.example/robots.txt":
+                return b"User-agent: *\nDisallow: /blocked\n"
+            if url == "https://publisher.example/story":
+                redirect_guard("https://other.example/blocked")
+            self.fail("A blocked redirect destination was requested")
+
+        with patch("news.collector.download", side_effect=download), patch("news.collector.time.sleep"):
+            with self.assertRaisesRegex(ValueError, "disallowed by robots"):
+                ArticleExtractor().fetch("https://publisher.example/story")
+        self.assertEqual(requests, ["https://publisher.example/robots.txt", "https://publisher.example/story",
+                                    "https://other.example/robots.txt"])
 
 
 if __name__ == "__main__":

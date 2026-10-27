@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Representative RSS publisher structure; all story text and URLs are fictional. -->
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
+  <channel>
+    <title>Example News</title>
+    <link>https://example.com/news</link>
+    <atom:link href="https://example.com/rss" rel="self" type="application/rss+xml"/>
+    <item>
+      <title><![CDATA[Research team shares a new discovery]]></title>
+      <description><![CDATA[<p>A <strong>fictional</strong> summary for a parser regression.</p>]]></description>
+      <link>https://example.com/news/discovery?utm_source=rss</link>
+      <guid isPermaLink="false">publisher-article-001</guid>
+      <pubDate>Fri, 23 Oct 2026 12:00:00 GMT</pubDate>
+      <media:thumbnail url="https://example.com/images/discovery.jpg"/>
+    </item>
+    <item>
+      <title>City opens a public library</title>
+      <description>A second fictional story.</description>
+      <link>https://example.com/news/library</link>
+      <pubDate>Fri, 23 Oct 2026 11:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

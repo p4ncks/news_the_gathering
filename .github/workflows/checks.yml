@@ -1,0 +1,33 @@
+name: Checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  sqlite:
+    runs-on: ubuntu-latest
+    env:
+      DJANGO_DEBUG: "true"
+      NEWS_DB_PATH: /tmp/gathering-tests.db
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m unittest discover -s tests -v
+      - run: python manage.py check
+      - run: python manage.py makemigrations --check --dry-run
+  browser:
+    runs-on: ubuntu-latest
+    env:
+      DJANGO_DEBUG: "true"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-test.txt
+      - run: python -m playwright install --with-deps chromium
+      - run: python -m unittest discover -s tests/browser -v

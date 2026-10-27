@@ -1,0 +1,34 @@
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+<!doctype html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if article %}{{ article.title }}{% else %}{% translate "Saved article" %}{% endif %} — The Gathering</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'dashboard/favicon.svg' %}">
+  <link rel="stylesheet" href="{% static 'dashboard/styles.css' %}?v=11">
+  <script src="{% static 'dashboard/filters.js' %}?v=7" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="{% url 'dashboard:index' %}" aria-label="{% translate 'The Gathering home' %}"><span class="brand-mark" aria-hidden="true">g.</span><span>The Gathering<span class="brand-caption">{% translate "A wider view of the world" %}</span></span></a>
+    <div class="masthead-actions">{% include "dashboard/language_selector.html" %}<a class="masthead-link" href="{% url 'dashboard:index' %}">{% translate "Back to the desk" %} <span aria-hidden="true">↗</span></a></div>
+  </header>
+  <main class="reader-content">
+    <p class="section-kicker">{{ source.name }} · {% translate source.edition_scope %}</p>
+    {% if unavailable %}
+      <h1>{% translate "Saved article temporarily unavailable." %}</h1><p>{% translate "Please try again in a moment." %}</p>
+    {% else %}
+      <article class="reader-article">
+        <h1 lang="{{ source.language_code }}">{{ article.title }}</h1>
+        <p class="published-at">{% translate "Published" %}: {{ published_label }} · {% translate source.language %}</p>
+        {% if article.body %}<p class="published-at">{% translate "Text saved" %}: {{ body_saved_label }}</p>{% endif %}
+        {% if body_metadata_changed %}<div class="notice notice-warning reader-notice" role="status">{% translate "This saved text may predate the current headline or summary. Check the publisher for the latest version." %}</div>{% elif body_version_unknown %}<p class="reader-note">{% translate "This text comes from an earlier saved edition. Its extraction time and version have not been verified." %}</p>{% endif %}
+        {% if publisher_url %}<p><a class="text-link" href="{{ publisher_url }}" target="_blank" rel="noopener noreferrer">{% blocktranslate with outlet=source.name %}Read the original at {{ outlet }}{% endblocktranslate %} <span aria-hidden="true">↗</span><span class="visually-hidden"> {% translate "(opens in a new tab)" %}</span></a></p>{% endif %}
+        {% if article.body %}<div class="reader-body" lang="{{ source.language_code }}">{{ article.body|linebreaks }}</div>{% else %}<p>{% translate "No extracted text has been saved for this article." %}</p>{% endif %}
+      </article>
+    {% endif %}
+  </main>
+</body>
+</html>

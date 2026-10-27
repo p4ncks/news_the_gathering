@@ -1,0 +1,30 @@
+{% load i18n %}
+<details id="suggest-outlet" class="source-directory suggestion-panel"{% if suggestion_open or suggestion_received %} open{% endif %}>
+  <summary><span><span class="section-kicker">{% translate "Your source recommendations" %}</span>{% translate "Suggest a news outlet" %}</span><span class="expand-symbol" aria-hidden="true">+</span></summary>
+  <div class="directory-content">
+    {% if suggestion_received %}<p class="suggestion-success" role="status">{% translate "Thank you. Your suggestion has been saved for review." %}</p>{% endif %}
+    <p>{% translate "Which news outlet would you like to see here? Suggestions are reviewed before an outlet is added." %}</p>
+    <form class="suggestion-form" method="post" action="{% url 'dashboard:suggest_outlet' %}">
+      {% csrf_token %}
+      {{ suggestion_form.website_confirmation }}{{ suggestion_form.return_query }}
+      <p class="required-fields-note"><span class="required-marker" aria-hidden="true">*</span> {% translate "Required fields" %}</p>
+      {% if suggestion_form.errors %}
+        <div class="form-errors" role="alert">
+          <p>{% translate "Please review the highlighted fields." %}</p>
+          {{ suggestion_form.non_field_errors }}
+        </div>
+      {% endif %}
+      <div class="suggestion-fields">
+        {% for field in suggestion_form.visible_fields %}
+          <div class="suggestion-field{% if field.name == 'reason' %} suggestion-field-wide{% endif %}">
+            <label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="required-marker" aria-hidden="true">*</span><span class="visually-hidden"> {% translate "(required)" %}</span>{% else %} <span class="optional-label">{% translate "(optional)" %}</span>{% endif %}</label>
+            {{ field }}
+            {% if field.help_text %}<p class="field-help suggestion-help" id="{{ field.id_for_label }}_helptext">{{ field.help_text }}</p>{% endif %}
+            {% if field.errors %}<div class="field-errors" id="suggest-{{ field.name }}-errors">{{ field.errors }}</div>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+      <div class="suggestion-actions"><button class="button button-primary" type="submit">{% translate "Send suggestion" %} <span aria-hidden="true">→</span></button></div>
+    </form>
+  </div>
+</details>

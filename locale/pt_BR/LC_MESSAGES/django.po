@@ -1,0 +1,553 @@
+# Brazilian Portuguese interface. Publisher names and news are not translated.
+# Edit this file, then run python scripts/compile_translations.py.
+msgid ""
+msgstr "Project-Id-Version: The Gathering\nLanguage: pt_BR\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nPlural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "%(count)s match"
+msgid_plural "%(count)s matches"
+msgstr[0] "%(count)s resultado"
+msgstr[1] "%(count)s resultados"
+
+msgid "%(count)s more headline"
+msgid_plural "%(count)s more headlines"
+msgstr[0] "Mais %(count)s manchete"
+msgstr[1] "Mais %(count)s manchetes"
+
+msgid "%(count)s outlet"
+msgid_plural "%(count)s outlets"
+msgstr[0] "%(count)s veículo"
+msgstr[1] "%(count)s veículos"
+
+msgid "%(count)s outlet selected"
+msgid_plural "%(count)s outlets selected"
+msgstr[0] "%(count)s veículo selecionado"
+msgstr[1] "%(count)s veículos selecionados"
+
+msgid "%(count)s outlet without matches hidden."
+msgid_plural "%(count)s outlets without matches hidden."
+msgstr[0] "%(count)s veículo sem resultados oculto."
+msgstr[1] "%(count)s veículos sem resultados ocultos."
+
+msgid "%(count)s saved headline"
+msgid_plural "%(count)s saved headlines"
+msgstr[0] "%(count)s manchete salva"
+msgstr[1] "%(count)s manchetes salvas"
+
+msgid "(opens in a new tab)"
+msgstr "(abre em uma nova aba)"
+
+msgid "(optional)"
+msgstr "(opcional)"
+
+msgid "(required)"
+msgstr "(obrigatório)"
+
+msgid "A wider view of the world"
+msgstr "Uma visão mais ampla do mundo"
+
+msgid "Africa"
+msgstr "África"
+
+msgid "All news"
+msgstr "Todas as notícias"
+
+msgid "All off"
+msgstr "Desmarcar tudo"
+
+msgid "All on"
+msgstr "Marcar tudo"
+
+msgid "All times UTC"
+msgstr "Todos os horários em UTC"
+
+msgid "Apply my selection"
+msgstr "Aplicar minha seleção"
+
+msgid "Argentina"
+msgstr "Argentina"
+
+msgid "Asia"
+msgstr "Ásia"
+
+msgid "Australia"
+msgstr "Austrália"
+
+msgid "Back to the desk"
+msgstr "Voltar às notícias"
+
+msgid "Back to top ↑"
+msgstr "Voltar ao topo ↑"
+
+msgid "Behind the headlines"
+msgstr "Por trás das manchetes"
+
+msgid "Brazil"
+msgstr "Brasil"
+
+msgid "Your source recommendations"
+msgstr "Suas recomendações de fontes"
+
+msgid "Canada"
+msgstr "Canadá"
+
+msgid "Change language"
+msgstr "Alterar idioma"
+
+msgid "Chile"
+msgstr "Chile"
+
+msgid "Choose a continent and an outlet, then apply your selection to bring its latest saved headlines into view."
+msgstr "Escolha um continente e um veículo e aplique sua seleção para ver as últimas manchetes salvas."
+
+msgid "Choose at least one outlet."
+msgstr "Escolha pelo menos um veículo."
+
+msgid "Choose your continents"
+msgstr "Escolha os continentes"
+
+msgid "Clear search"
+msgstr "Limpar busca"
+
+msgid "Collection"
+msgstr "Coleta"
+
+msgid "Colombia"
+msgstr "Colômbia"
+
+msgid "Colombia section"
+msgstr "Seção Colômbia"
+
+msgid "Compact headlines"
+msgstr "Manchetes compactas"
+
+msgid "Compare the current top ten headlines from news outlets around the world."
+msgstr "Compare as dez principais manchetes atuais de veículos de notícias do mundo todo."
+
+msgid "Configured news outlets and their collection sources"
+msgstr "Veículos de notícias disponíveis e suas fontes de coleta"
+
+msgid "Continent"
+msgstr "Continente"
+
+msgid "Continents"
+msgstr "Continentes"
+
+msgid "Country or region"
+msgstr "País ou região"
+
+msgid "Curate your view"
+msgstr "Personalize sua visão"
+
+msgid "Current selection"
+msgstr "Seleção atual"
+
+msgid "Disabled"
+msgstr "Desativada"
+
+msgid "Discover what is the world talking about"
+msgstr "Descubra sobre o que o mundo está falando"
+
+msgid "Edition"
+msgstr "Edição"
+
+msgid "Edition scope"
+msgstr "Abrangência da edição"
+
+msgid "Enabled"
+msgstr "Ativada"
+
+msgid "English"
+msgstr "Inglês"
+
+msgid "Enter a public website address using http or https, without login details."
+msgstr "Informe um endereço público com http ou https, sem dados de acesso."
+
+msgid "Español"
+msgstr "Espanhol"
+
+msgid "Europe"
+msgstr "Europa"
+
+msgid "Explore ten headlines from each outlet and see the world from more than one angle."
+msgstr "Explore dez manchetes de cada veículo e veja o mundo por mais de um ângulo."
+
+msgid "Find a topic"
+msgstr "Encontre um assunto"
+
+msgid "Fine-tune your outlets"
+msgstr "Selecione os veículos"
+
+msgid "First matching headline"
+msgstr "Primeira manchete encontrada"
+
+msgid "France"
+msgstr "França"
+
+msgid "Français"
+msgstr "Francês"
+
+msgid "Front page"
+msgstr "Primeira página"
+
+msgid "Front pages"
+msgstr "Primeiras páginas"
+
+msgid "Front pages, side by side."
+msgstr "Primeiras páginas, lado a lado."
+
+msgid "General news"
+msgstr "Notícias gerais"
+
+msgid "Germany"
+msgstr "Alemanha"
+
+msgid "Headline layout"
+msgstr "Visualização das manchetes"
+
+msgid "Headlines by news outlet"
+msgstr "Manchetes por veículo de notícias"
+
+msgid "Headlines from %(outlet)s"
+msgstr "Manchetes de %(outlet)s"
+
+msgid "Headlines, side by side."
+msgstr "Manchetes, lado a lado."
+
+msgid "Hide outlets without matches"
+msgstr "Ocultar veículos sem resultados"
+
+msgid "Homepage"
+msgstr "Página inicial"
+
+msgid "India"
+msgstr "Índia"
+
+msgid "Individual choices update their continent too."
+msgstr "Suas escolhas também atualizam a seleção do continente."
+
+msgid "Jump to"
+msgstr "Ir para"
+
+msgid "Jump to an outlet"
+msgstr "Ir para um veículo"
+
+msgid "Kenya"
+msgstr "Quênia"
+
+msgid "Kenya news"
+msgstr "Notícias do Quênia"
+
+msgid "Language"
+msgstr "Idioma"
+
+msgid "Latest news"
+msgstr "Últimas notícias"
+
+msgid "Latest update"
+msgstr "Última atualização"
+
+msgid "Latest update failed. Showing the last saved edition. Last attempt: %(attempted)s"
+msgstr "A última atualização falhou. Exibindo a última edição salva. Última tentativa: %(attempted)s"
+
+msgid "Leading headline"
+msgstr "Manchete principal"
+
+msgid "Make it your view"
+msgstr "Escolha sua perspectiva"
+
+msgid "Meet the sources"
+msgstr "Conheça as fontes"
+
+msgid "New Zealand"
+msgstr "Nova Zelândia"
+
+msgid "News filters"
+msgstr "Filtros de notícias"
+
+msgid "News section"
+msgstr "Seção de notícias"
+
+msgid "News, The Gathering — Your global news desk"
+msgstr "Notícias, The Gathering — Seu panorama global de notícias"
+
+msgid "Nigeria"
+msgstr "Nigéria"
+
+msgid "No extracted text has been saved for this article."
+msgstr "Nenhum texto extraído foi salvo para esta notícia."
+
+msgid "No headlines collected yet."
+msgstr "Nenhuma manchete coletada ainda."
+
+msgid "No headlines match “%(query)s”."
+msgstr "Nenhuma manchete encontrada para “%(query)s”."
+
+msgid "No matching headlines in this outlet’s top ten."
+msgstr "Nenhum resultado entre as dez manchetes deste veículo."
+
+msgid "No outlets are enabled yet."
+msgstr "Nenhum veículo ativado ainda."
+
+msgid "No saved headlines for this outlet yet."
+msgstr "Nenhuma manchete salva para este veículo ainda."
+
+msgid "North America"
+msgstr "América do Norte"
+
+msgid "Scroll to read"
+msgstr "Role para ler"
+
+msgid "Not available"
+msgstr "Não disponível"
+
+msgid "Oceania"
+msgstr "Oceania"
+
+msgid "Official publisher feeds and section pages supply headlines, descriptions and links. The first ten stories follow publisher feed or page order; they are not a popularity score or an exact homepage ranking. Optional Trafilatura extraction saves article text where accessible. Failed collections retain the previous successful edition."
+msgstr "Os feeds e as páginas dos veículos fornecem manchetes, descrições e links. As dez primeiras notícias seguem a ordem do feed ou da página; não representam uma classificação de popularidade nem a ordem exata da página inicial. A extração opcional com Trafilatura salva o texto das notícias quando acessível. Se uma coleta falhar, a última edição bem-sucedida é mantida."
+
+msgid "Older publisher stories"
+msgstr "Notícias mais antigas na fonte"
+
+msgid "Optional. Please avoid personal information."
+msgstr "Opcional. Evite informações pessoais."
+
+msgid "Original languages"
+msgstr "Idiomas originais"
+
+msgid "Original perspective"
+msgstr "Perspectiva original"
+
+msgid "Outlet"
+msgstr "Veículo"
+
+msgid "Outlet name"
+msgstr "Nome do veículo"
+
+msgid "Outlets"
+msgstr "Veículos"
+
+msgid "Please review the highlighted fields."
+msgstr "Revise os campos destacados."
+
+msgid "Please try again"
+msgstr "Tente novamente"
+
+msgid "Please try again in a moment."
+msgstr "Tente novamente em instantes."
+
+msgid "Português"
+msgstr "Português"
+
+msgid "Published"
+msgstr "Publicado"
+
+msgid "Published:"
+msgstr "Publicado:"
+
+msgid "Publisher feed"
+msgstr "Feed do veículo"
+
+msgid "Publisher feed & page order"
+msgstr "Ordem do feed e da página do veículo"
+
+msgid "Publisher source"
+msgstr "Fonte do veículo"
+
+msgid "Qatar"
+msgstr "Catar"
+
+msgid "Rank %(rank)s"
+msgstr "Posição %(rank)s"
+
+msgid "Read at %(outlet)s"
+msgstr "Leia em %(outlet)s"
+
+msgid "Read saved article text"
+msgstr "Ler texto salvo da notícia"
+
+msgid "Read the original at %(outlet)s"
+msgstr "Leia o original em %(outlet)s"
+
+msgid "Reset"
+msgstr "Redefinir"
+
+msgid "Russia"
+msgstr "Rússia"
+
+msgid "Saved"
+msgstr "Manchetes"
+
+msgid "Saved article"
+msgstr "Notícia salva"
+
+msgid "Saved article temporarily unavailable."
+msgstr "Notícia salva temporariamente indisponível."
+
+msgid "Saved edition · update delayed"
+msgstr "Edição salva · atualização pendente"
+
+msgid "Saved headlines are temporarily unavailable."
+msgstr "As manchetes salvas estão temporariamente indisponíveis."
+
+msgid "Search covers titles and summaries in the selected outlets’ current top ten. Try another word or choose more outlets."
+msgstr "A busca inclui títulos e resumos das dez manchetes atuais dos veículos selecionados. Tente outra palavra ou selecione mais veículos."
+
+msgid "Search the headlines"
+msgstr "Buscar nas manchetes"
+
+msgid "Select a continent to see its outlets."
+msgstr "Selecione um continente para ver seus veículos."
+
+msgid "Select a continent to select its outlets."
+msgstr "Selecione um continente para marcar seus veículos."
+
+msgid "Select all continents and outlets"
+msgstr "Selecionar todos os continentes e veículos"
+
+msgid "Send suggestion"
+msgstr "Enviar sugestão"
+
+msgid "Show all outlets"
+msgstr "Mostrar todos os veículos"
+
+msgid "Show them"
+msgstr "Mostrar veículos"
+
+msgid "Singapore"
+msgstr "Singapura"
+
+msgid "Skip to headlines"
+msgstr "Pular para as manchetes"
+
+msgid "Source directory & how collection works"
+msgstr "Fontes e como a coleta funciona"
+
+msgid "Source directory table"
+msgstr "Tabela de fontes"
+
+msgid "Source page"
+msgstr "Página da fonte"
+
+msgid "South Africa"
+msgstr "África do Sul"
+
+msgid "South America"
+msgstr "América do Sul"
+
+msgid "Space section"
+msgstr "Seção de espaço"
+
+msgid "Spain"
+msgstr "Espanha"
+
+msgid "Stay curious. Keep your perspective open."
+msgstr "Mantenha a curiosidade. Amplie sua perspectiva."
+
+msgid "Story details"
+msgstr "Detalhes da notícia"
+
+msgid "Suggest a news outlet"
+msgstr "Sugira um veículo de notícias"
+
+msgid "Suggestions are temporarily unavailable. Please try again later."
+msgstr "As sugestões estão temporariamente indisponíveis. Tente novamente mais tarde."
+
+msgid "Let's hear it."
+msgstr "Vamos ouvir."
+
+msgid "Text saved"
+msgstr "Texto salvo"
+
+msgid "Thank you. Your suggestion has been saved for review."
+msgstr "Obrigado! Sua sugestão foi salva para análise."
+
+msgid "The Gathering home"
+msgstr "Página inicial do The Gathering"
+
+msgid "The last successful update is over %(hours)s hours old."
+msgstr "A última atualização bem-sucedida ocorreu há mais de %(hours)s horas."
+
+msgid "The newest dated story is over 48 hours old. The publisher source may be stale."
+msgstr "A notícia com data mais recente tem mais de 48 horas. A fonte do veículo pode estar desatualizada."
+
+msgid "The perspective exchange"
+msgstr "Encontro de perspectivas"
+
+msgid "The world is talking."
+msgstr "O mundo está falando."
+
+msgid "This saved text may predate the current headline or summary. Check the publisher for the latest version."
+msgstr "Este texto salvo pode ser anterior ao título ou resumo atual. Consulte o veículo para ver a versão mais recente."
+
+msgid "This selection is waiting for its first saved edition. Please check back shortly."
+msgstr "Esta seleção aguarda sua primeira edição salva. Volte em breve."
+
+msgid "This text comes from an earlier saved edition. Its extraction time and version have not been verified."
+msgstr "Este texto vem de uma edição salva anteriormente. O horário da extração e a versão não foram verificados."
+
+msgid "Top stories"
+msgstr "Principais notícias"
+
+msgid "Try another angle"
+msgstr "Tente outro ângulo"
+
+msgid "Unable to send this suggestion. Please reload the page and try again."
+msgstr "Não foi possível enviar a sugestão. Recarregue a página e tente novamente."
+
+msgid "United Kingdom"
+msgstr "Reino Unido"
+
+msgid "United States"
+msgstr "Estados Unidos"
+
+msgid "Update delayed"
+msgstr "Atualização pendente"
+
+msgid "Updated"
+msgstr "Atualizado"
+
+msgid "Waiting for first update"
+msgstr "Aguardando primeira atualização"
+
+msgid "We could not load this edition. Please try again in a moment."
+msgstr "Não foi possível carregar esta edição. Tente novamente em instantes."
+
+msgid "Website"
+msgstr "Site"
+
+msgid "Which news outlet would you like to see here? Suggestions are reviewed before an outlet is added."
+msgstr "Qual veículo de notícias você gostaria de ver aqui? As sugestões são analisadas antes da inclusão de um veículo."
+
+msgid "Why would you like to see it here?"
+msgstr "Por que você gostaria de vê-lo aqui?"
+
+msgid "World news"
+msgstr "Notícias do mundo"
+
+msgid "Your global news desk"
+msgstr "Seu panorama global de notícias"
+
+msgid "a wider view<br>of the world"
+msgstr "uma visão mais ampla<br>do mundo"
+
+msgid "Required fields"
+msgstr "Campos obrigatórios"
+
+msgid "headlines"
+msgstr "salvas"
+
+msgid "represented"
+msgstr "representados"
+
+msgid "selected"
+msgstr "selecionados"
+
+msgid "{count} outlet selected"
+msgstr "{count} veículo selecionado"
+
+msgid "{count} outlets selected"
+msgstr "{count} veículos selecionados"
+
+msgid "Русский"
+msgstr "Russo"

@@ -1,3 +1,6 @@
 from django.urls import include, path
 
-urlpatterns = [path("", include("dashboard.urls"))]
+urlpatterns = [
+    path("i18n/", include("django.conf.urls.i18n")),
+    path("", include("dashboard.urls")),
+]
