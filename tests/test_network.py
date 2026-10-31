@@ -1,4 +1,5 @@
 """Public address checks, DNS pinning, redirect policy and real worker cancellation."""
+import ipaddress
 import multiprocessing
 import socket
 import time
@@ -26,6 +27,48 @@ class NetworkTests(unittest.TestCase):
         with patch("news.network.socket.getaddrinfo", return_value=address_records("93.184.216.34", "127.0.0.1")):
             with self.assertRaises(ValueError):
                 network.public_destination("https://publisher.example/story")
+
+    def test_accepts_public_nat64_answers_without_rejecting_the_whole_publisher(self):
+        # The observed BBC response combines native IPv4 with its DNS64 answer.
+        addresses = ("2.20.128.161", "64:ff9b::214:80a1")
+        for answers in (addresses, addresses[1:], ("2606:4700::1111",)):
+            with self.subTest(answers=answers), patch("news.network.socket.getaddrinfo", return_value=address_records(*answers)):
+                _, host, port, accepted = network.public_destination("https://feeds.bbci.co.uk/news/rss.xml")
+                self.assertEqual(host, "feeds.bbci.co.uk")
+                self.assertEqual(port, 443)
+                self.assertEqual(accepted, list(answers))
+
+    def test_nat64_does_not_allow_private_or_special_embedded_ipv4(self):
+        for ipv4 in ("127.0.0.1", "10.1.2.3", "172.16.1.1", "192.168.1.1", "169.254.169.254",
+                     "0.0.0.0", "100.64.0.1", "192.0.2.1", "198.18.0.1", "224.0.0.1", "240.0.0.1"):
+            address = str(ipaddress.IPv6Address(int(network.NAT64_PREFIX.network_address) + int(ipaddress.IPv4Address(ipv4))))
+            with self.subTest(ipv4=ipv4), patch("news.network.socket.getaddrinfo", return_value=address_records(address)), \
+                    patch("news.network.urllib3.HTTPSConnectionPool") as pool:
+                with self.assertRaisesRegex(ValueError, "private or reserved"):
+                    network.fetch_once("https://publisher.example/story", 100, "Reader", time.monotonic() + 10)
+                pool.assert_not_called()
+
+    def test_local_use_translation_prefix_and_mixed_nat64_private_answers_stay_blocked(self):
+        for addresses in (("64:ff9b:1::5db8:d822",), ("93.184.216.34", "64:ff9b::a9fe:a9fe")):
+            with self.subTest(addresses=addresses), patch("news.network.socket.getaddrinfo", return_value=address_records(*addresses)):
+                with self.assertRaisesRegex(ValueError, "private or reserved"):
+                    network.public_destination("https://publisher.example/story")
+
+    def test_nat64_connection_keeps_original_ipv6_and_publisher_tls_identity(self):
+        address = "64:ff9b::214:80a1"
+        response = Mock(status=200)
+        response.read.side_effect = [b"news", b""]
+        pool = Mock()
+        pool.urlopen.return_value = response
+        with patch("news.network.socket.getaddrinfo", return_value=address_records(address)), \
+                patch("news.network.urllib3.HTTPSConnectionPool", return_value=pool) as make_pool:
+            result = network.fetch_once("https://feeds.bbci.co.uk/news/rss.xml", 100, "Reader", time.monotonic() + 10)
+        self.assertEqual(result, (200, "", b"news"))
+        self.assertEqual(make_pool.call_args.args, (address,))
+        self.assertEqual(make_pool.call_args.kwargs["server_hostname"], "feeds.bbci.co.uk")
+        self.assertEqual(make_pool.call_args.kwargs["assert_hostname"], "feeds.bbci.co.uk")
+        self.assertEqual(make_pool.call_args.kwargs["cert_reqs"], "CERT_REQUIRED")
+        self.assertEqual(pool.urlopen.call_args.kwargs["headers"]["Host"], "feeds.bbci.co.uk")
 
     def test_pins_resolved_ip_but_preserves_tls_hostname_and_host_header(self):
         response = Mock(status=200)

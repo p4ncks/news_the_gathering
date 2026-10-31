@@ -17,6 +17,10 @@ import urllib3
 
 MAX_REDIRECTS = 5
 DEFAULT_DOWNLOAD_SECONDS = 30
+# RFC 6052's standard NAT64 prefix embeds an IPv4 destination in the last
+# 32 bits. Python can label this prefix both global and reserved, so validate
+# the embedded destination instead of rejecting every translated public host.
+NAT64_PREFIX = ipaddress.IPv6Network("64:ff9b::/96")
 
 
 class DeadlineExceeded(TimeoutError):
@@ -81,10 +85,15 @@ def public_destination(url):
     addresses = []
     for result in socket.getaddrinfo(host, port, type=socket.SOCK_STREAM):
         address = ipaddress.ip_address(result[4][0])
-        check = address.ipv4_mapped if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped else address
+        check = address
+        if isinstance(address, ipaddress.IPv6Address):
+            if address.ipv4_mapped:
+                check = address.ipv4_mapped
+            elif address in NAT64_PREFIX:
+                check = ipaddress.IPv4Address(address.packed[-4:])
         if (not check.is_global or check.is_multicast or check.is_reserved
                 or check.is_loopback or check.is_link_local or check.is_unspecified):
-            raise ValueError("Destination resolves to a private or reserved address")
+            raise ValueError(f"Destination {host} resolves to a private or reserved address ({address})")
         if str(address) not in addresses:
             addresses.append(str(address))
     if not addresses:

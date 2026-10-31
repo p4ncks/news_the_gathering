@@ -82,8 +82,9 @@ feed or listing page, in publisher order. It is not a popularity ranking or a
 claim that every feed reproduces its homepage. Each card identifies its edition
 scope and collection time. Geography describes the publisher's home base.
 
-The catalog contains 27 organizations and 28 sections across six inhabited
-continents; CNN Space is a section of CNN. Edit `news/sources.py` to change the
+The catalog contains 28 organizations and 29 sections across six inhabited
+continents; CNN Space is a section of CNN, and NASA supplies its own official
+updates through RSS. Edit `news/sources.py` to change the
 catalog. RSS sources use the shared feed parser; HTML sources need a compatible
 listing-page adapter.
 
