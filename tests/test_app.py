@@ -21,7 +21,14 @@ from django.urls import reverse
 from lxml import html
 
 from news import database
+from news.models import Article, SourceStatus
 from news.sources import SOURCES
+from support import POSTGRES, initialize_default_database, sqlite_only
+
+
+def set_succeeded_at(value, **filters):
+    with database._using() as alias:
+        SourceStatus.objects.using(alias).filter(**filters).update(succeeded_at=database._date(value))
 
 
 def setUpModule():
@@ -43,7 +50,7 @@ class AppTests(unittest.TestCase):
         environment = patch.dict(os.environ, {"NEWS_DB_PATH": str(self.path)})
         environment.start()
         self.addCleanup(environment.stop)
-        database.initialize()
+        initialize_default_database()
         self.now = datetime.now(timezone.utc).isoformat(timespec="seconds")
         database.save_collection("bbc", [
             self.article("climate", "Climate summit opens", "Global climate priorities"),
@@ -143,8 +150,7 @@ class AppTests(unittest.TestCase):
         database.save_collection("bbc", [self.article(
             "old", "Older saved story", "A saved description", published_at=old,
             body="Previously extracted article text.")])
-        with database.connect() as db:
-            db.execute("UPDATE source_status SET succeeded_at=? WHERE source_id=?", (old, "bbc"))
+        set_succeeded_at(old, source_id="bbc")
         response = self.get(filtered="1", continent=["Europe"], outlet=["bbc"])
         self.assertTrue(response.context["cards"][0]["collection_stale"])
         self.assertTrue(response.context["cards"][0]["feed_stale"])
@@ -171,8 +177,7 @@ class AppTests(unittest.TestCase):
 
     def test_dashboard_uses_the_configured_freshness_window(self):
         old = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat()
-        with database.connect() as db:
-            db.execute("UPDATE source_status SET succeeded_at=? WHERE source_id=?", (old, "bbc"))
+        set_succeeded_at(old, source_id="bbc")
         with override_settings(NEWS_FRESHNESS_HOURS=24):
             response = self.get(filtered="1", continent=["Europe"], outlet=["bbc"])
         self.assertFalse(response.context["cards"][0]["collection_stale"])
@@ -269,18 +274,26 @@ class AppTests(unittest.TestCase):
         self.assertNotIn('href="javascript:', html)
         self.assertIn('href="https://example.com/safe"', html)
 
+    def stored_state(self):
+        if not POSTGRES:
+            return self.path.read_bytes(), self.path.stat().st_mtime_ns
+        with database._using() as alias:
+            return (list(Article.objects.using(alias).order_by("pk").values()),
+                    list(SourceStatus.objects.using(alias).order_by("pk").values()))
+
     def test_requests_read_saved_data_without_collecting_or_writing(self):
-        before = (self.path.read_bytes(), self.path.stat().st_mtime_ns)
+        before = self.stored_state()
         with patch("news.database.initialize", side_effect=AssertionError("Unexpected write")), \
                 patch("news.collector.download", side_effect=AssertionError("Unexpected network")):
             self.get()
             health = self.client.get(reverse("dashboard:health"))
         self.assertEqual(health.status_code, 200)
         self.assertEqual(health.json(), {"status": "ok"})
-        self.assertEqual((self.path.read_bytes(), self.path.stat().st_mtime_ns), before)
+        self.assertEqual(self.stored_state(), before)
         self.assertEqual(self.client.post(self.index).status_code, 405)
         self.assertEqual(self.client.post(reverse("dashboard:health")).status_code, 405)
 
+    @sqlite_only("A server database has no file that could be missing")
     def test_missing_database_is_an_empty_view_and_is_not_created(self):
         missing = Path(self.directory.name) / "not-created" / "news.db"
         with patch.dict(os.environ, {"NEWS_DB_PATH": str(missing)}):
@@ -291,6 +304,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(health.json(), {"status": "ok"})
         self.assertFalse(missing.parent.exists())
 
+    @sqlite_only("It corrupts a SQLite file; test_postgres covers an unavailable server")
     def test_unreadable_database_shows_friendly_empty_state(self):
         invalid = Path(self.directory.name) / "invalid.db"
         invalid.write_text("Not a SQLite database", encoding="utf-8")
@@ -448,8 +462,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(healthy.status_code, 200)
         self.assertEqual(healthy.json()["status"], "ok")
         old = (datetime.now(timezone.utc) - timedelta(days=3)).isoformat(timespec="seconds")
-        with database.connect() as db:
-            db.execute("UPDATE source_status SET succeeded_at=?", (old,))
+        set_succeeded_at(old)
         stale = self.client.get(ready_url)
         self.assertEqual(stale.status_code, 503)
         self.assertEqual(stale.json()["fresh"], 0)

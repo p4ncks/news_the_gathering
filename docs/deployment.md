@@ -3,8 +3,9 @@
 [Back to the README](../README.md)
 
 Publishing this repository on GitHub shares the source code. Running the website
-requires a Python host, persistent local storage and the processes described here.
-This release uses SQLite for news, edition history and private outlet suggestions.
+requires a Python host, a database and the processes described here. News, edition
+history and private outlet suggestions live in SQLite by default, or in PostgreSQL
+when `DATABASE_URL` is set. See [Vercel and Supabase](#vercel-and-supabase).
 
 ## Configuration
 
@@ -57,9 +58,59 @@ python -m news.collect --interval 30
 ```
 
 Configure your process runner to restart both processes after failures or host
-restarts. The collector owns a file lock during each run. Web requests read saved
+restarts. The collector owns a lock during each run: a file on SQLite, an advisory
+lock on PostgreSQL. Web requests read saved
 news and accept private outlet suggestions; they never start collection or run
 schema migrations.
+
+## Vercel and Supabase
+
+The website runs as a Vercel function and the collector runs on a machine you
+control, both against one Supabase PostgreSQL database. `vercel.json` places the
+function in `cle1`, near Supabase's `us-east-2`; change it if your project is
+elsewhere. Vercel installs `requirements.txt` and runs `collectstatic` during the
+build. Compiled translations are committed in `locale/`; run
+`python scripts/compile_translations.py` and commit the result after editing them.
+
+`DATABASE_URL` wins over `NEWS_DB_PATH`. Percent-encode special characters in the
+password. TLS is required except on localhost, and a `sslmode` query value wins.
+Each process uses a different Supabase pooler:
+
+| Process | Pooler | Port |
+| --- | --- | --- |
+| Vercel website | Transaction | 6543 |
+| Collector and `news.maintenance init` | Session | 5432 |
+
+The collector refuses port 6543, because its advisory lock lasts a whole session
+and a transaction pooler does not keep one. Set these for the collector, and
+initialize the schema once before the first deployment and after each upgrade:
+
+```ini
+DJANGO_SECRET_KEY=YOUR_GENERATED_PRIVATE_KEY
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/postgres
+```
+
+```bash
+python -m news.maintenance init
+python -m news.collect --interval 30
+```
+
+Set these in the Vercel project, for builds as well as at runtime, since
+`collectstatic` loads the same settings:
+
+```ini
+DJANGO_SECRET_KEY=YOUR_GENERATED_PRIVATE_KEY
+DJANGO_ALLOWED_HOSTS=news.example.com
+DJANGO_CSRF_TRUSTED_ORIGINS=https://news.example.com
+DJANGO_SECURE_SSL_REDIRECT=true
+DJANGO_TRUST_PROXY=true
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:6543/postgres
+```
+
+List every domain that should answer, including any `vercel.app` address. Vercel
+never runs migrations. Row level security is enabled on every table with no
+policies, so Supabase's Data API sees nothing while Django, as the table owner,
+keeps working. Connect as the role that ran the migrations.
 
 ## Docker
 
@@ -108,6 +159,9 @@ status when collection fails or becomes stale. Raw collector errors remain in
 server logs and stored run diagnostics.
 
 ## Backups and recovery
+
+On PostgreSQL, use Supabase backups or `pg_dump`. The commands below work on SQLite
+files and stop with an explanation when `DATABASE_URL` is set.
 
 Create a compressed, verified backup:
 

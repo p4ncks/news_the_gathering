@@ -11,8 +11,10 @@ os.environ.setdefault("DJANGO_DEBUG", "true")
 
 from news import database
 from news.maintenance import create_backup, verify_backup
+from support import sqlite_only
 
 
+@sqlite_only("These archives are SQLite files; test_postgres covers the refusal on PostgreSQL")
 class MaintenanceTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()

@@ -229,6 +229,34 @@ class StorageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "nonempty"):
             database.import_sqlite(source, self.path)
 
+    def test_nul_characters_are_removed_before_saving(self):
+        dirty = {"url": "https://example.test/nu\x00l", "title": "Ti\x00tle", "summary": "Sum\x00mary",
+                 "body": "Bo\x00dy"}
+        database.save_collection("bbc", [dirty], self.path)
+        row = database.get_headlines("bbc", self.path)[0]
+        clean_url = "https://example.test/nul"
+        self.assertEqual((row["url"], row["title"], row["summary"], row["body"]),
+                         (clean_url, "Title", "Summary", "Body"))
+        self.assertEqual(row["url_hash"], database._hash(clean_url))
+        self.assertEqual(database.get_body("bbc", dirty["url"], self.path), "Body")
+        database.save_collection("bbc", [dirty], self.path)
+        self.assertEqual(self.count("articles"), 1)
+
+    def test_urls_differing_only_by_nul_are_duplicates(self):
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            database.save_collection("bbc", [self.article("same"), {**self.article("same"), "url": "https://example.test/sa\x00me"}], self.path)
+
+    def test_nul_characters_are_removed_from_failures_and_diagnostics(self):
+        database.record_failure("bbc", "Time\x00out", self.path)
+        self.assertEqual(database.get_statuses(self.path)["bbc"]["error"], "Timeout")
+        database.record_run([{"source": "B\x00BC", "source_id": "b\x00bc", "count": 0, "error": "Ba\x00d",
+                              "warnings": ["Wa\x00rn"]}], self.path)
+        from news.models import CollectionRun
+        with database._using(self.path) as alias:
+            diagnostics = CollectionRun.objects.using(alias).get().diagnostics[0]
+        self.assertEqual((diagnostics["source"], diagnostics["source_id"], diagnostics["error"], diagnostics["warnings"]),
+                         ("BBC", "bbc", "Bad", ["Warn"]))
+
     def test_all_ranks_and_snapshots_roll_back_on_invalid_collection(self):
         database.save_collection("bbc", [self.article()], self.path)
         with self.assertRaises(KeyError):

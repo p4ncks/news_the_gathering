@@ -18,6 +18,7 @@ def _copy_stream(source, destination):
 
 def verify_backup(path):
     """Test gzip integrity and restore SQLite to a temporary database for checks."""
+    database.require_sqlite("Backup verification")
     path = Path(path)
     with tempfile.TemporaryDirectory(prefix="news-restore-check-") as directory:
         restored = Path(directory) / "restored"
@@ -38,6 +39,7 @@ def create_backup(directory, keep=7):
     """Create and verify a backup before rotating only this command's older files."""
     from gathering.database_config import database_settings
     database_settings()
+    database.require_sqlite("Backup")
     if keep < 1:
         raise ValueError("Keep at least one backup.")
     directory = Path(directory).resolve()

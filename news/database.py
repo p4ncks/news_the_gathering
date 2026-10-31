@@ -1,8 +1,9 @@
-"""SQLite storage shared by the Django website and collectors.
+"""SQLite or PostgreSQL storage shared by the Django website and collectors.
 
 Django owns the schema. Public functions return plain dictionaries so the
 collector and templates stay independent of model objects. Only explicit
 initialize/maintenance commands create or migrate a database; reads never do.
+An explicit path always means an isolated SQLite file, whatever the default is.
 """
 import hashlib
 import json
@@ -48,11 +49,39 @@ def _django():
         django.setup()
 
 
+def _default_is_sqlite():
+    _django()
+    from django.db import connections
+    return connections["default"].vendor == "sqlite"
+
+
+def require_sqlite(action, path=None):
+    """File-based tools cannot read a server database; say what to use instead."""
+    if path is None and not _default_is_sqlite():
+        raise RuntimeError(f"{action} works on SQLite files only. On PostgreSQL, use Supabase backups or pg_dump.")
+
+
+def release_connection():
+    """Free a server connection slot while a long-running collector waits."""
+    if not _default_is_sqlite():
+        from django.db import connections
+        connections["default"].close()
+
+
+def _clean(value):
+    """PostgreSQL text and jsonb reject NUL, and it never belongs in news text."""
+    return value.replace("\x00", "") if isinstance(value, str) else value
+
+
 def _alias(path=None, read_only=False):
     """An explicit path gets an isolated SQLite alias, useful for imports/tests."""
     _django()
     from django.db import connections
     default = connections.databases["default"]
+    if path is None and connections["default"].vendor != "sqlite":
+        # DATABASE_URL wins over NEWS_DB_PATH. Read-only is not enforced by the
+        # connection here; read functions only issue reads.
+        return "default"
     if path is None and "NEWS_DB_PATH" not in os.environ:
         if not read_only or str(default["NAME"]) == ":memory:":
             return "default"
@@ -61,7 +90,9 @@ def _alias(path=None, read_only=False):
     alias = "news_" + hashlib.sha256(str(path).encode()).hexdigest()[:20] + ("_ro" if read_only else "")
     if alias not in connections.databases:
         configuration = deepcopy(default)
-        configuration.update(NAME=str(path), OPTIONS={"timeout": 30}, CONN_MAX_AGE=0, ATOMIC_REQUESTS=False)
+        configuration.update(ENGINE="django.db.backends.sqlite3", NAME=str(path), OPTIONS={"timeout": 30},
+                             USER="", PASSWORD="", HOST="", PORT="", CONN_MAX_AGE=0, ATOMIC_REQUESTS=False)
+        configuration.pop("DISABLE_SERVER_SIDE_CURSORS", None)
         if read_only:
             configuration["NAME"] = path.as_uri() + "?mode=ro"
             configuration["OPTIONS"]["uri"] = True
@@ -83,6 +114,8 @@ def _models():
 def _exists(alias):
     from django.db import connections
     connection = connections[alias]
+    if connection.vendor != "sqlite":
+        return True
     name = str(connection.settings_dict["NAME"])
     return name == ":memory:" or _sqlite_path(name).is_file()
 
@@ -94,7 +127,7 @@ def _using(path=None, read_only=False):
     query_only = None
     try:
         # A separate URI connection cannot address SQLite's private :memory: DB.
-        if read_only and str(connections[alias].settings_dict["NAME"]) == ":memory:":
+        if read_only and connections[alias].vendor == "sqlite" and str(connections[alias].settings_dict["NAME"]) == ":memory:":
             with connections[alias].cursor() as cursor:
                 query_only = cursor.execute("PRAGMA query_only").fetchone()[0]
                 cursor.execute("PRAGMA query_only = ON")
@@ -114,7 +147,7 @@ def connect(path=None, read_only=False):
 
     Keeping this helper lets existing local scripts inspect the same table names.
     """
-    _django()
+    require_sqlite("The inspection helper", path)
     path = database_path(path)
     if read_only:
         db = sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True, timeout=30)
@@ -141,10 +174,11 @@ def initialize(path=None):
         if not connection.in_atomic_block and str(connection.settings_dict["NAME"]) != ":memory:":
             connection.close_if_unusable_or_obsolete()
         name = str(connection.settings_dict["NAME"])
-        if name != ":memory:":
-            Path(name).parent.mkdir(parents=True, exist_ok=True)
-        with connection.cursor() as cursor:
-            cursor.execute("PRAGMA journal_mode = WAL")
+        if connection.vendor == "sqlite":
+            if name != ":memory:":
+                Path(name).parent.mkdir(parents=True, exist_ok=True)
+            with connection.cursor() as cursor:
+                cursor.execute("PRAGMA journal_mode = WAL")
         executor = MigrationExecutor(connection)
         # News and private outlet suggestions share the configured database.
         # Web requests only read existing storage; schema changes stay explicit.
@@ -180,7 +214,7 @@ def save_collection(source_id, articles, path=None):
     with _using(path) as alias, transaction.atomic(using=alias):
         saved, seen = [], set()
         for incoming in articles:
-            url = incoming["url"]
+            url = _clean(incoming["url"])
             if url in seen:
                 raise ValueError("A ranked edition cannot contain duplicate URLs")
             seen.add(url)
@@ -189,11 +223,11 @@ def save_collection(source_id, articles, path=None):
                 row = Article(source_id=source_id, url=url, url_hash=_hash(url), first_seen_at=now)
             elif row.url != url:
                 raise ValueError("URL digest collision; refusing to merge different URLs")
-            row.title = incoming["title"]
-            row.summary = incoming["summary"]
+            row.title = _clean(incoming["title"])
+            row.summary = _clean(incoming["summary"])
             row.published_at = _date(incoming.get("published_at")) or row.published_at
             row.collected_at = row.last_seen_at = now
-            body = incoming.get("body", "")
+            body = _clean(incoming.get("body", ""))
             if body:
                 fetched = incoming.get("body_fetched_at")
                 if fetched:
@@ -233,7 +267,7 @@ def record_failure(source_id, error, path=None):
     Status = _models()[2]
     with _using(path) as alias:
         Status.objects.using(alias).update_or_create(source_id=source_id,
-            defaults={"attempted_at": _date(utc_now()), "error": str(error)[:500]})
+            defaults={"attempted_at": _date(utc_now()), "error": _clean(str(error))[:500]})
 
 
 def get_headlines(source_id, path=None):
@@ -326,6 +360,7 @@ def get_editions(source_id, limit=5, path=None):
 
 def get_body_metadata(source_id, url, path=None):
     Article = _models()[0]
+    url = _clean(url)
     with _using(path, read_only=True) as alias:
         if not _exists(alias):
             return None
@@ -344,9 +379,9 @@ def get_body(source_id, url, path=None):
 def record_run(results, path=None, started_at=None, finished_at=None):
     Run = _models()[5]
     finished = _date(finished_at or utc_now())
-    diagnostics = [{"source": str(row.get("source", ""))[:100], "source_id": str(row.get("source_id", ""))[:64],
-                    "count": int(row.get("count", 0)), "error": str(row.get("error", ""))[:500],
-                    "warnings": [str(warning)[:500] for warning in row.get("warnings", [])[:10]],
+    diagnostics = [{"source": _clean(str(row.get("source", "")))[:100], "source_id": _clean(str(row.get("source_id", "")))[:64],
+                    "count": int(row.get("count", 0)), "error": _clean(str(row.get("error", "")))[:500],
+                    "warnings": [_clean(str(warning))[:500] for warning in row.get("warnings", [])[:10]],
                     "duration_ms": max(0, int(row.get("duration_ms", 0)))} for row in results]
     failed = sum(bool(row["error"]) for row in diagnostics)
     with _using(path) as alias:
@@ -379,6 +414,7 @@ def prune(path=None, days=RETENTION_DAYS, max_editions=MAX_EDITIONS):
 
 def backup(destination, path=None, current_only=False):
     """Consistent SQLite backup including committed WAL data; never overwrite."""
+    require_sqlite("Backup and export", path)
     from django.db import connections
     with _using(path, read_only=True) as alias:
         connection = connections[alias]
@@ -430,13 +466,14 @@ def import_sqlite(source_path, path=None):
     import is a no-op; a different nonempty target is rejected rather than merged.
     Stop collectors while importing. The source file is never migrated or changed.
     """
+    from django.core.management.color import no_style
     from django.db import connections, transaction
     from dashboard.models import OutletSuggestion
     Article, Headline, Status, Edition, EditionHeadline, Run = _models()
     source_path = Path(source_path).resolve()
     target_alias = _alias(path)
     target_connection = connections[target_alias]
-    if _sqlite_path(target_connection.settings_dict["NAME"]).resolve() == source_path:
+    if target_connection.vendor == "sqlite" and _sqlite_path(target_connection.settings_dict["NAME"]).resolve() == source_path:
         raise ValueError("Import source and target must be different databases")
     model_tables = [(Article, "articles"), (Status, "source_status"), (Headline, "headlines"),
                     (Edition, "editions"), (EditionHeadline, "edition_headlines"), (Run, "collection_runs"),
@@ -510,6 +547,10 @@ def import_sqlite(source_path, path=None):
                         batch = []
                 if batch:
                     model.objects.using(alias).bulk_create(batch, batch_size=100)
+            # Explicit IDs do not advance PostgreSQL sequences; later inserts would collide.
+            with connections[alias].cursor() as cursor:
+                for statement in connections[alias].ops.sequence_reset_sql(no_style(), [model for model, _ in model_tables]):
+                    cursor.execute(statement)
             for headline in Headline.objects.using(alias).select_related("article"):
                 if headline.source_id != headline.article.source_id:
                     raise ValueError("Import source contains a headline assigned to another outlet")

@@ -22,6 +22,7 @@ from lxml import html
 from dashboard.forms import OutletSuggestionForm
 from dashboard.models import OutletSuggestion
 from news import database
+from support import initialize_default_database, sqlite_only
 
 
 class SuggestionTests(unittest.TestCase):
@@ -38,7 +39,7 @@ class SuggestionTests(unittest.TestCase):
         environment = patch.dict(os.environ, {"NEWS_DB_PATH": str(self.path)})
         environment.start()
         self.addCleanup(environment.stop)
-        database.initialize()
+        initialize_default_database()
         self.client = Client()
         self.endpoint = reverse("dashboard:suggest_outlet")
         self.payload = {
@@ -164,6 +165,7 @@ class SuggestionTests(unittest.TestCase):
         self.assertNotIn("private", response.url)
         self.assertNotIn("evil.example", response.url)
 
+    @sqlite_only("Backups are SQLite files; test_postgres covers the refusal and importing suggestions")
     def test_full_backup_and_import_preserve_private_suggestions_and_dates(self):
         self.client.post(self.endpoint, self.payload)
         submitted = datetime(2025, 4, 12, 9, 30, tzinfo=timezone.utc)
@@ -182,6 +184,7 @@ class SuggestionTests(unittest.TestCase):
         repeated = database.import_sqlite(backup, path=target)
         self.assertTrue(repeated["already_imported"])
 
+    @sqlite_only("Snapshots are SQLite files; test_postgres covers the refusal on PostgreSQL")
     def test_website_snapshot_omits_private_suggestions(self):
         self.client.post(self.endpoint, self.payload)
         exported = self.path.parent / "public-snapshot.db"

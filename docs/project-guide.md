@@ -173,7 +173,7 @@ There is no public submissions list or automatic source approval.
 | `news/sources.py` | Outlets, languages and edition scopes |
 | `news/collector.py` | Parsing, validation, text refresh and edition collection |
 | `news/network.py` | Guarded downloads, redirects and worker deadlines |
-| `news/models.py`, `news/database.py` | SQLite records, reads, imports and history |
+| `news/models.py`, `news/database.py` | SQLite or PostgreSQL records, reads, imports and history |
 | `news/migrations/` | Versioned schema and original SQLite upgrade |
 | `news/collect.py`, `news/locking.py` | Scheduled CLI and collector ownership |
 | `news/maintenance.py` | Initialization, retention, backups and exports |
@@ -181,7 +181,7 @@ There is no public submissions list or automatic source approval.
 | `dashboard/forms.py`, `dashboard/suggestions.py` | Private outlet submissions |
 | `dashboard/templates/dashboard/` | Dashboard and reader HTML |
 | `dashboard/static/dashboard/` | Theme, filters, logo, flags and map |
-| `gathering/database_config.py` | Local SQLite path configuration |
+| `gathering/database_config.py` | SQLite path or `DATABASE_URL` configuration |
 | `gathering/settings.py` | Django configuration |
 
 ## Validate

@@ -41,8 +41,8 @@ Screenshots show saved publisher editions; headlines change as collection runs.
   flags and collection timestamps.
 - **Collect independently:** publisher feeds and section pages update the
   database in the background; failed collections keep the last good edition.
-- **Keep storage manageable:** local SQLite storage, deduplicated articles,
-  bounded edition history and compressed, rotating backup commands.
+- **Keep storage manageable:** SQLite locally or PostgreSQL in production,
+  deduplicated articles, bounded edition history and rotating SQLite backups.
 - **Suggest sources:** readers can submit outlet recommendations for private
   review.
 
@@ -77,14 +77,16 @@ before initialization.
 ## How it works
 
 ```text
-Publisher feeds / pages → Python collectors → SQLite → Django website
+Publisher feeds / pages → Python collectors → SQLite or PostgreSQL → Django website
 ```
 
 “Top ten” follows publisher feed or section-page order; it is not a popularity
 ranking. Outlet names and news content stay in their original languages. Each
 card identifies the outlet's home country, edition scope and last update.
 
-SQLite stores local data in `data/news.db`, which is ignored by Git. History
+SQLite is the local default and stores data in `data/news.db`, which is ignored
+by Git. Setting `DATABASE_URL` switches both the website and collectors to
+PostgreSQL. History
 defaults to **30 days and at most 48 changed editions per outlet**; current headlines remain protected from pruning. Page
 requests never launch collectors or run database migrations.
 
@@ -93,7 +95,7 @@ requests never launch collectors or run database migrations.
 | Guide | Contents |
 | --- | --- |
 | [Project guide](docs/project-guide.md) | Collection options, filters, upgrades, retention, backups and code map |
-| [Deployment guide](docs/deployment.md) | Django production settings, Docker, SQLite storage and recovery |
+| [Deployment guide](docs/deployment.md) | Django production settings, Vercel and Supabase, Docker, storage and recovery |
 | [Source catalog](news/sources.py) | Add or edit outlets, languages and edition scopes |
 | [Configuration example](.env.example) | Available environment variables |
 

@@ -5,7 +5,8 @@ import os
 import time
 
 from news.collector import collect_all, preparation_limits, retention_limits
-from news.locking import collector_lock, CollectorAlreadyRunning
+from news import database
+from news.locking import collector_lock, CollectorAlreadyRunning, CollectorLockError
 from news.sources import SOURCES
 
 
@@ -47,8 +48,8 @@ def main():
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     try:
         while True:
-            # Hold the database's file lock for each run, then release it while
-            # waiting so one-off collection remains available between runs.
+            # Hold the database's lock for each run, then release it while waiting
+            # so one-off collection remains available between runs.
             with collector_lock():
                 results = collect_all(sources, extract_articles=args.extract,
                                       timeout_seconds=args.source_timeout, minimum_edition_ratio=args.min_edition_ratio)
@@ -56,8 +57,9 @@ def main():
                     print(f"{result['source']}: " + (result['error'] or f"{result['count']} headlines saved"), flush=True)
                 if not args.interval:
                     return 1 if any(result["error"] for result in results) else 0
+            database.release_connection()
             wait_for_next_run(args.interval * 60)
-    except CollectorAlreadyRunning as error:
+    except (CollectorAlreadyRunning, CollectorLockError) as error:
         LOG = logging.getLogger(__name__)
         LOG.error("%s", error)
         return 1
