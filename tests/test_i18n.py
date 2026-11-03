@@ -127,9 +127,11 @@ class LanguageTests(unittest.TestCase):
     def test_masthead_displays_romans_11_36_in_english_and_portuguese(self):
         page_en = self.client.get('/').content.decode()
         self.assertIn('“For from him and through him and to him are all things. To him be glory forever. Amen.”', page_en)
-        self.assertIn('— Romans 11:36', page_en)
+        self.assertIn('Romans 11:36', page_en)
+        self.assertNotIn('— Romans 11:36', page_en)
 
         self.portuguese()
         page_pt = self.client.get('/').content.decode()
         self.assertIn('“Porque dele, e por meio dele, e para ele são todas as coisas. A ele, pois, a glória eternamente. Amém!”', page_pt)
-        self.assertIn('— Romanos 11:36', page_pt)
+        self.assertIn('Romanos 11:36', page_pt)
+        self.assertNotIn('— Romanos 11:36', page_pt)
