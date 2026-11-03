@@ -123,3 +123,13 @@ class LanguageTests(unittest.TestCase):
             self.assertEqual(translation.ngettext('%(count)s outlet selected', '%(count)s outlets selected', 2), '%(count)s veículos selecionados')
             self.assertEqual(translation.gettext('Not available'), 'Não disponível')
         self.assertTrue((Path(__file__).resolve().parents[1] / 'locale/pt_BR/LC_MESSAGES/django.mo').is_file())
+
+    def test_masthead_displays_romans_11_36_in_english_and_portuguese(self):
+        page_en = self.client.get('/').content.decode()
+        self.assertIn('“For from him and through him and to him are all things. To him be glory forever. Amen.”', page_en)
+        self.assertIn('— Romans 11:36', page_en)
+
+        self.portuguese()
+        page_pt = self.client.get('/').content.decode()
+        self.assertIn('“Porque dele, e por meio dele, e para ele são todas as coisas. A ele, pois, a glória eternamente. Amém!”', page_pt)
+        self.assertIn('— Romanos 11:36', page_pt)

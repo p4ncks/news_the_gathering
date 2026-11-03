@@ -171,6 +171,9 @@ msgstr "Europa"
 msgid "Explore ten headlines from each outlet and see the world from more than one angle."
 msgstr "Explore dez manchetes de cada veículo e veja o mundo por mais de um ângulo."
 
+msgid "For from him and through him and to him are all things. To him be glory forever. Amen."
+msgstr "Porque dele, e por meio dele, e para ele são todas as coisas. A ele, pois, a glória eternamente. Amém!"
+
 msgid "Find a topic"
 msgstr "Encontre um assunto"
 
@@ -371,6 +374,9 @@ msgstr "Leia o original em %(outlet)s"
 
 msgid "Reset"
 msgstr "Redefinir"
+
+msgid "Romans 11:36"
+msgstr "Romanos 11:36"
 
 msgid "Russia"
 msgstr "Rússia"
