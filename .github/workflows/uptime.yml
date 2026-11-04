@@ -1,0 +1,51 @@
+name: Uptime
+on:
+  schedule:
+    # Hourly, at an odd minute: runs queued at the top of the hour are often delayed.
+    - cron: "17 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ready:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      READY_URL: https://news-the-gathering.vercel.app/ready/
+    steps:
+      - name: Check that the collector keeps the news fresh
+        run: |
+          # No --fail: curl then saves the body of a 503 too, so the log shows why it failed.
+          # --retry repeats timeouts and transient answers (503 included) before giving up.
+          code=$(curl --silent --show-error --max-time 20 --retry 2 --retry-delay 15 \
+            --output ready.json --write-out '%{http_code}' "$READY_URL") || {
+            echo "::error::Could not reach $READY_URL"
+            exit 1
+          }
+          echo "HTTP $code"
+          cat ready.json
+          echo
+
+          if [ "$code" != "200" ]; then
+            echo "::error::$READY_URL returned HTTP $code (body above): no fresh news, the collector may have stopped."
+            exit 1
+          fi
+
+          # jq -e fails when the body is not JSON or has no status string.
+          status=$(jq -er '.status | strings' ready.json) || {
+            echo "::error::$READY_URL answered 200 without a readable status (body above)."
+            exit 1
+          }
+
+          case "$status" in
+            ok)
+              ;;
+            degraded)
+              counts=$(jq -r '"\(.fresh) of \(.sources) sources fresh, \(.stale) stale, \(.failed) failed, \(.missing) missing"' ready.json)
+              echo "::warning::Readiness is degraded: $counts"
+              ;;
+            *)
+              echo "::error::$READY_URL answered 200 with an unexpected status: $status"
+              exit 1
+              ;;
+          esac

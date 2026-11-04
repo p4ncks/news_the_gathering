@@ -4,6 +4,10 @@
 <h1 align="center">News, The Gathering</h1>
 <p align="center"><strong>A wider view of the world.</strong><br>Compare ten headlines from news outlets across six continents.</p>
 <p align="center">
+  <strong>Live site:</strong> <a href="https://news-the-gathering.vercel.app">https://news-the-gathering.vercel.app</a>
+</p>
+<p align="center">
+  <a href="#tech-stack">Tech stack</a> ·
   <a href="#features">Features</a> ·
   <a href="#quickstart">Quickstart</a> ·
   <a href="#how-it-works">How it works</a> ·
@@ -30,6 +34,14 @@ original language. The interface is available in **English and Portuguese**.
 Screenshots show saved publisher editions; headlines change as collection runs.
 
 </details>
+
+## Tech stack
+
+- **Python 3.12** and **Django**
+- **PostgreSQL on Supabase** in production (SQLite locally)
+- **Vercel** for the website
+- A **Raspberry Pi** running the collector as a systemd service every 30 minutes
+- **GitHub Actions** for CI (unit tests on SQLite and Postgres plus Chromium browser checks, see [.github/workflows/checks.yml](.github/workflows/checks.yml)) and an hourly uptime check (GitHub Actions)
 
 ## Features
 
@@ -80,6 +92,14 @@ before initialization.
 Publisher feeds / pages → Python collectors → SQLite or PostgreSQL → Django website
 ```
 
+```mermaid
+flowchart LR
+    Feeds["Publisher feeds"] --> Collector["Collector on Raspberry Pi<br>(systemd, every 30 min)"]
+    Collector --> DB["PostgreSQL on Supabase"]
+    DB --> Web["Django on Vercel"]
+    Web --> Readers["Readers"]
+```
+
 “Top ten” follows publisher feed or section-page order; it is not a popularity
 ranking. Outlet names and news content stay in their original languages. Each
 card identifies the outlet's home country, edition scope and last update.
@@ -89,6 +109,8 @@ by Git. Setting `DATABASE_URL` switches both the website and collectors to
 PostgreSQL. History
 defaults to **30 days and at most 48 changed editions per outlet**; current headlines remain protected from pruning. Page
 requests never launch collectors or run database migrations.
+
+The health of the collection is public at [https://news-the-gathering.vercel.app/ready/](https://news-the-gathering.vercel.app/ready/) (JSON: fresh, stale, failed sources, latest success).
 
 ## Documentation
 

@@ -158,6 +158,33 @@ The dashboard shows each outlet's last successful update and a quiet delayed
 status when collection fails or becomes stale. Raw collector errors remain in
 server logs and stored run diagnostics.
 
+## Monitoring
+
+[`.github/workflows/uptime.yml`](../.github/workflows/uptime.yml) checks the live
+`/ready/` endpoint every hour (at minute 17) and can also be started by hand from
+the Actions tab. It prints the JSON answer and:
+
+- fails when `/ready/` does not answer 200, which happens when no source is fresh,
+  for example because the collector stopped;
+- fails when a 200 answer is not valid JSON or has a status other than `ok` or
+  `degraded`;
+- passes with a warning annotation and the source counts when the status is
+  `degraded`;
+- passes quietly when the status is `ok`.
+
+It needs no secrets and costs nothing on GitHub's free runners. This monitoring
+is best effort: GitHub can delay scheduled runs at busy times, or drop them. A
+stopped collector is usually noticed within about 3 hours, an estimate: news
+stays fresh for `NEWS_FRESHNESS_HOURS` (2 hours), then the next hourly check
+fails.
+
+A failed run sends GitHub's usual failed-workflow email, if the recipient's
+GitHub Actions notification settings allow it. For scheduled workflows it goes
+to the account that last changed the `cron` line in the workflow file. GitHub
+disables scheduled workflows in public repositories after 60 days without
+repository activity; turn it back on from the workflow's page in the Actions tab.
+The account that re-enables it becomes the new recipient of the failure emails.
+
 ## Backups and recovery
 
 On PostgreSQL, use Supabase backups or `pg_dump`. The commands below work on SQLite
