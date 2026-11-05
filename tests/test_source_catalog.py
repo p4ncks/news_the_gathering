@@ -57,6 +57,16 @@ class SourceCatalogTests(unittest.TestCase):
         self.assertGreaterEqual(len(sources), 3)
         self.assertTrue({"Argentina", "Chile", "Colombia"}.issubset({source.country for source in sources}))
 
+    def test_r7_is_a_brazilian_portuguese_outlet_using_its_news_feed(self):
+        sources = {source.id: source for source in SOURCES if source.enabled}
+        brazil = {source.id for source in sources.values() if source.country == "Brazil"}
+        self.assertTrue({"g1", "folha", "r7"}.issubset(brazil))
+        r7 = sources["r7"]
+        self.assertEqual((r7.continent, r7.language, r7.language_code),
+                         ("South America", "Português", "pt-BR"))
+        # The www.r7.com root feed is mostly videos and courses, not news.
+        self.assertEqual(r7.feed_url, "https://noticias.r7.com/arc/outboundfeeds/rss/")
+
 
 if __name__ == "__main__":
     unittest.main()
