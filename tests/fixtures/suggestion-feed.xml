@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <title>Reader News</title><link>https://reader.example/</link><language>pt-br</language>
+  <item><title>Primeira notícia</title><link>https://reader.example/1</link><pubDate>Wed, 04 Nov 2026 10:00:00 GMT</pubDate></item>
+  <item><title>Segunda notícia</title><link>https://reader.example/2</link><pubDate>Wed, 04 Nov 2026 11:00:00 GMT</pubDate></item>
+  <item><title>Terceira notícia</title><link>https://reader.example/3</link><pubDate>Wed, 04 Nov 2026 12:00:00 GMT</pubDate></item>
+  <item><title>Quarta notícia</title><link>https://reader.example/4</link></item>
+  <item><title>Quinta notícia</title><link>https://reader.example/5</link></item>
+  <item><title>Sexta notícia</title><link>https://reader.example/6</link></item>
+  <item><title>Sétima notícia</title><link>https://reader.example/7</link></item>
+  <item><title>Oitava notícia</title><link>https://reader.example/8</link></item>
+  <item><title>Nona notícia</title><link>https://reader.example/9</link></item>
+  <item><title>Décima notícia</title><link>https://reader.example/10</link></item>
+  <item><title>Notícia sem data</title><link>https://reader.example/11</link><pubDate>invalid date</pubDate></item>
+  <item><title>Notícia mais recente</title><link>https://reader.example/12</link><pubDate>Thu, 05 Nov 2026 14:00:00 GMT</pubDate></item>
+  <item><title>Duplicate URL</title><link>https://reader.example/1?utm_source=rss</link></item>
+  <item><title>No usable link</title></item>
+</channel></rss>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="fr">
+  <title>Reader News Atom</title><id>https://reader.example/atom</id>
+  <updated>2026-11-05T14:00:00Z</updated>
+  <entry><title>Premier article</title><id>https://reader.example/a</id><link href="https://reader.example/a"/><updated>2026-11-05T14:00:00Z</updated></entry>
+  <entry><title>Deuxième article</title><id>https://reader.example/b</id><link href="https://reader.example/b"/><updated>2026-11-04T10:00:00Z</updated></entry>
+  <entry><title>Troisième article</title><id>https://reader.example/c</id><link href="https://reader.example/c"/></entry>
+</feed>

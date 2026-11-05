@@ -87,6 +87,8 @@ def main(argv=None):
     editions = commands.add_parser("editions", help="Inspect the retained ranked editions for an outlet")
     editions.add_argument("--source", required=True)
     editions.add_argument("--limit", type=int, default=5)
+    suggestions = commands.add_parser("suggestions", help="Review reader suggestions and print feed catalog drafts (read-only)")
+    suggestions.add_argument("--all", action="store_true", help="Also review suggestions already in the catalog")
     arguments = parser.parse_args(argv)
     try:
         if arguments.command == "init":
@@ -106,6 +108,10 @@ def main(argv=None):
             if not 1 <= arguments.limit <= 48:
                 parser.error("Choose an edition limit between 1 and 48.")
             result = database.get_editions(arguments.source, arguments.limit)
+        elif arguments.command == "suggestions":
+            from news.suggestion_review import review_suggestions
+            print(review_suggestions(include_catalogued=arguments.all))
+            return 0
         else:
             result = verify_backup(arguments.path)
         print(json.dumps(result, ensure_ascii=False))

@@ -293,6 +293,18 @@ def get_statuses(path=None):
         return {row["source_id"]: _serialize(row) for row in Status.objects.using(alias).values()}
 
 
+def get_outlet_suggestions(path=None):
+    """Read private reader suggestions without initializing or changing storage."""
+    with _using(path, read_only=True) as alias:
+        if not _exists(alias):
+            return []
+        from dashboard.models import OutletSuggestion
+        rows = OutletSuggestion.objects.using(alias).order_by("-submitted_at", "-id").values(
+            "id", "name", "website", "country", "reason", "submitted_at",
+        )
+        return [_serialize(row) for row in rows]
+
+
 def _dashboard_rows(alias, source_ids=None):
     """Read statuses and headline metadata from one consistent SQL snapshot."""
     from django.db import connections, transaction

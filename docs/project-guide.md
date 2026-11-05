@@ -82,7 +82,7 @@ feed or listing page, in publisher order. It is not a popularity ranking or a
 claim that every feed reproduces its homepage. Each card identifies its edition
 scope and collection time. Geography describes the publisher's home base.
 
-The catalog contains 28 organizations and 29 sections across six inhabited
+The catalog contains 29 organizations and 30 sections across six inhabited
 continents; CNN Space is a section of CNN, and NASA supplies its own official
 updates through RSS. Edit `news/sources.py` to change the
 catalog. RSS sources use the shared feed parser; HTML sources need a compatible
@@ -109,6 +109,45 @@ the database.
 Article bodies refresh after 24 hours or a changed headline/summary. A failed
 refresh preserves the previous body, fetch time and version fingerprint. Raw HTML
 and publisher images are not retained.
+
+## Reviewing reader suggestions
+
+Readers can suggest new outlets through the web form. The read-only `suggestions`
+maintenance command inspects pending submissions from the database, searches for
+candidate feeds, and prints a draft `Source(...)` entry for catalog review:
+
+```bash
+# On the Raspberry Pi (with the collector's environment loaded):
+python -m news.maintenance suggestions
+
+# Locally (with the database environment loaded):
+export DJANGO_DEBUG=true
+python -m news.maintenance suggestions
+
+# Include suggestions that already match an outlet in the catalog:
+python -m news.maintenance suggestions --all
+```
+
+The command never writes anything. It reads suggestions from the database, skips
+outlets already in the catalog (unless `--all` is specified), and tests candidate
+RSS and Atom feeds using the collector's safe network code. For each candidate feed,
+it reports the item count, newest item date, and sample headlines, followed by a
+proposed catalog draft.
+
+A person must review the draft before adding it. Automated discovery can select
+the wrong feed (for example, R7's root feed is mostly videos, so its `noticias.r7.com`
+feed was used instead).
+
+After verifying the feed:
+
+1. Paste the `Source(...)` entry into `news/sources.py`.
+2. Run the tests: `python -m unittest discover -s tests`.
+3. Push your changes to Git.
+4. On the Raspberry Pi, pull the changes and restart the collector:
+   ```bash
+   git pull
+   sudo systemctl restart news-collector
+   ```
 
 ## Storage, history and backups
 
@@ -163,7 +202,8 @@ python scripts/compile_translations.py
 ```
 
 The compiler needs no external gettext program. Suggestions are stored in
-`dashboard_outletsuggestion` and can be inspected with a private SQLite tool.
+`dashboard_outletsuggestion` and can be reviewed with `python -m news.maintenance suggestions`
+(see [Reviewing reader suggestions](#reviewing-reader-suggestions)).
 There is no public submissions list or automatic source approval.
 
 ## Understand the code
@@ -173,10 +213,11 @@ There is no public submissions list or automatic source approval.
 | `news/sources.py` | Outlets, languages and edition scopes |
 | `news/collector.py` | Parsing, validation, text refresh and edition collection |
 | `news/network.py` | Guarded downloads, redirects and worker deadlines |
+| `news/suggestion_review.py` | Read-only candidate feed discovery and catalog drafts |
 | `news/models.py`, `news/database.py` | SQLite or PostgreSQL records, reads, imports and history |
 | `news/migrations/` | Versioned schema and original SQLite upgrade |
 | `news/collect.py`, `news/locking.py` | Scheduled CLI and collector ownership |
-| `news/maintenance.py` | Initialization, retention, backups and exports |
+| `news/maintenance.py` | Initialization, retention, backups, exports and suggestion reviews |
 | `dashboard/views.py` | Filters, article reader and health routes |
 | `dashboard/forms.py`, `dashboard/suggestions.py` | Private outlet submissions |
 | `dashboard/templates/dashboard/` | Dashboard and reader HTML |

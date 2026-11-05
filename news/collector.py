@@ -100,7 +100,7 @@ def bounded_work(function, *args):
     return network.run_with_deadline(function, args, deadline)
 
 
-def parse_feed(content):
+def parse_feed(content, limit=10):
     feed = feedparser.parse(content)
     # feedparser salvages completed entries from cut-off XML. Such an edition
     # must not replace a healthy saved one. Encoding-override warnings are benign.
@@ -124,7 +124,7 @@ def parse_feed(content):
         records.append({"url": url, "title": title,
                         "summary": clean_text(entry.get("summary", ""))[:1000],
                         "published_at": date, "body": ""})
-        if len(records) == 10:
+        if limit is not None and len(records) >= limit:
             break
     if not records:
         raise ValueError("Feed contains no usable headlines; it may be blocked or no longer available")

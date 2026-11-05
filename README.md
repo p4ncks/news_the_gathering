@@ -16,7 +16,7 @@
 
 ![The Gathering running locally: global news, continent filters and outlet comparisons](docs/images/desktop.jpg)
 
-A Python and Django news desk with **29 source sections from 28 organizations**.
+A Python and Django news desk with **30 source sections from 29 organizations**.
 Choose places and publishers, compare their priorities, and read the news in its
 original language. The interface is available in **English and Portuguese**.
 
